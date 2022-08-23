@@ -135,14 +135,7 @@ echo "Enabling the Synapse Dedicated SQL Query Store..."
 echo "$(date) [INFO] Enabling the Synapse Dedicated SQL Query Store..." >> $deploymentLogFile
 sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -Q "ALTER DATABASE ${synapseAnalyticsSQLPoolName} SET QUERY_STORE = ON;"
 
-# Create the Resource Class Logins
-echo "Creating the Synapse Dedicated SQL Resource Class Logins..."
-echo "$(date) [INFO] Creating the Synapse Dedicated SQL Resource Class Logins..." >> $deploymentLogFile
-cp "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Create_Resource_Class_Logins.sql.tmpl" "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Create_Resource_Class_Logins.sql" 2>&1
-sed -i "s/REPLACE_PASSWORD/${synapseAnalyticsSQLAdminPassword}/g" "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Create_Resource_Class_Logins.sql"
-sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -i "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Create_Resource_Class_Logins.sql"
-
-# Create the Resource Class Users
+# Create the Resource Class Users for the Parquet Auto Loader
 echo "Creating the Synapse Dedicated SQL Resource Class Users..."
 echo "$(date) [INFO] Creating the Synapse Dedicated SQL Resource Class Users..." >> $deploymentLogFile
 sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -i "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Create_Resource_Class_Users.sql"
