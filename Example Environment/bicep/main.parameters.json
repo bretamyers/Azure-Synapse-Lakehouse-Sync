@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "azureRegion": {
+      "value": "eastus"  
+    },
+    "resourceGroupName": {
+      "value": "Azure-Databricks-Lakehouse-Synapse-Sync"
+    },
+    "synapseSQLPoolName": {
+      "value": "DataWarehouse" 
+    },
+    "synapseSQLAdministratorLogin": {
+      "value": "sqladminuser" 
+    },
+    "synapseSQLAdministratorLoginPassword": {
+      "value": "Pass@word123" 
+    },
+    "synapseAzureADAdminObjectId": {
+      "value": "714ce9f9-6352-4ec4-a3d7-6630c210c3b6"
+    }
+  }
+}

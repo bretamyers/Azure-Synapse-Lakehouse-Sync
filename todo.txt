@@ -1,0 +1,13 @@
+1. Add in the databricks notebooks and updated synapse pipelines
+2. Pick a databricks -> ADLS authentication method
+3. Update the deploySynapseSync.sh script to add the databricks cluster and notebooks
+4. Copy the new dataset to the synapseanalyticspocdata storage account and update the script
+5. Create some readme's to accompany the databricks notebooks, synapse pipelines, and example environment template
+6. Create a PPT with data lake pattern overview, why this solution, benefits, architecture diagrams
+    Focus on 3 scenarios:
+        1. Synapse sync notebooks/configuration in customers production
+        2. If you use the data lake gold -> synapse pattern already, 'Example Environment' is a quick easy button
+           approach to see how this synapse sync works without having to build out or configure in your environment.
+        3. If you DO NOT use the data lake gold -> synapse pattern already, 'Example Environment' is a quick easy
+           button approach to see how it works.
+7. Rename the logging.AutoIngestion Synapse tables to logging.AutoLoader

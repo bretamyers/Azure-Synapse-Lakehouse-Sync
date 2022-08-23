@@ -1,0 +1,36 @@
+{
+	"name": "DS_Synapse_Managed_Identity",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_Synapse_Managed_Identity",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"ServerName": {
+					"value": "@dataset().ServerName",
+					"type": "Expression"
+				},
+				"DatabaseName": {
+					"value": "@dataset().DatabaseName",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"ServerName": {
+				"type": "string",
+				"defaultValue": ""
+			},
+			"DatabaseName": {
+				"type": "string",
+				"defaultValue": ""
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlDWTable",
+		"schema": [],
+        "typeProperties": {
+            "schema": " ",
+            "table": " "
+        }
+	}
+}
