@@ -10,4 +10,4 @@
            approach to see how this synapse sync works without having to build out or configure in your environment.
         3. If you DO NOT use the data lake gold -> synapse pattern already, 'Example Environment' is a quick easy
            button approach to see how it works.
-7. Rename the logging.AutoIngestion Synapse tables to logging.AutoLoader
+7. Rename the logging.AutoIngestion Synapse tables to logging.AutoLoader (I did it here but Bret needs to update the dev environment)
