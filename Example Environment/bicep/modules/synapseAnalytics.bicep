@@ -21,7 +21,7 @@ resource synapseStorageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' ex
   name: 'synapsesync${resourceSuffix}'
 }
 
-// Synapse Workspace
+// Synapse Analytics Workspace
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/overview-what-is
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces
 resource synapseWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
@@ -30,9 +30,7 @@ resource synapseWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
   identity: {
     type: 'SystemAssigned'
   }
-
   properties: {
-    //publicNetworkAccess: (enable_private_endpoints) ? 'Disabled' : 'Enabled'
     managedVirtualNetwork: 'default'
     defaultDataLakeStorage: {
       accountUrl: synapseStorageAccount.properties.primaryEndpoints.dfs

@@ -17,7 +17,6 @@ param resourceSuffix string
 resource databricksWorkspace 'Microsoft.Databricks/workspaces@2021-04-01-preview' = {
   name: 'synapsesync${resourceSuffix}'
   location: azureRegion
-
   sku: {
     name: 'premium'
   }
