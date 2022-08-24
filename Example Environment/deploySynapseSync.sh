@@ -16,16 +16,16 @@
 #       Bicep is capable of managing or would normally manage. Database settings are made, sample data is copied, 
 #       notebooks are copied, and pipelines are created.
 #
-#       These steps to make use of other dependencies such as Azure CLI, sqlcmd, and azcopy hence why it's
-#       easier to execute via the Azure Cloud Shell.
+#       These steps to make use of other dependencies such as Azure CLI and sqlcmd hence why it's easier to 
+#       execute via the Azure Cloud Shell.
 #
-#   This script should be executed via the Azure Cloud Shell via:
+#   This script should be executed via the Azure Cloud Shell (https://shell.azure.com):
 #
-#       @Azure:~/Azure-Synapse-Analytics-PoC$ bash deploySynapseSync.sh
+#       @Azure:~/Azure-Synapse-Lakehouse-Sync$ bash deploySynapseSync.sh
 #
 
 #
-# Part 1: Synapse Environment Deployment
+# Part 1: Environment Deployment
 #
 
 bicepDeploymentName="Azure-Databricks-Lakehouse-Synapse-Sync"
@@ -47,12 +47,6 @@ boldText=$(tput bold)
 normalText=$(tput sgr0)
 
 echo "$(date) [INFO] Starting deploySynapseSync.sh" >> $deploymentLogFile
-
-# Make sure this configuration script hasn't been executed already
-if [ -f "deploySynapse.complete" ]; then
-    echo "$(date) [ERROR] It appears this configuration has already been completed." | tee -a $deploymentLogFile
-    exit 1;
-fi
 
 # Try and determine if we're executing from within the Azure Cloud Shell
 if [ ! "${AZUREPS_HOST_ENVIRONMENT}" = "cloud-shell/1.0" ]; then
@@ -77,23 +71,30 @@ echo "$(date) [INFO] Azure AD Username: $azureUsername" >> $deploymentLogFile
 azureUsernameObjectId=$(az ad user show --id $azureUsername --query id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 echo "$(date) [INFO] Azure AD User Object Id: $azureUsernameObjectId" >> $deploymentLogFile
 
-# Update a Bicep variable if they aren't configured by the user. This allows Bicep to add the user Object Id
+# Update a Bicep variable if it isn't configured by the user. This allows Bicep to add the user Object Id
 # to the Storage Blob Data Contributor role on the Azure Data Lake Storage Gen2 account, which allows Synapse
 # Serverless SQL to query files on storage.
 sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${azureUsernameObjectId}/g" bicep/main.parameters.json 2>&1
 
 # Check to see if the Bicep deployment was already completed manually. If not, lets do it.
 if [ $(checkBicepDeploymentState) = "DeploymentNotFound" ]; then
+    # Get the Azure Region from the Bicep main.parameters.json
+    bicepAzureRegion=$(jq .parameters.azureRegion.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
+
     # Bicep deployment via Azure CLI
     echo "Deploying environment via Bicep. This will take several minutes..."
     echo "$(date) [INFO] Starting Bicep deployment" >> $deploymentLogFile
-    bicepDeploy=$(az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name $bicepDeploymentName --location eastus 2>&1 | tee -a $deploymentLogFile)
+    bicepDeploy=$(az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name $bicepDeploymentName --location $bicepAzureRegion 2>&1 | tee -a $deploymentLogFile)
 
     # Make sure the Bicep deployment was successful 
     checkBicepDeploymentState
 else
     echo "$(date) [INFO] It appears the Bicep deployment was done manually. Skipping..." >> $deploymentLogFile
 fi
+
+#
+# Part 2: Post-Deployment Configuration
+#
 
 # Get the output variables from the Bicep deployment
 resourceGroup=$(az deployment sub show --name ${bicepDeploymentName} --query properties.parameters.resourceGroupName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
@@ -125,7 +126,7 @@ echo "Enabling the Synapse Dedicated SQL Result Set Caching..."
 echo "$(date) [INFO] Enabling the Synapse Dedicated SQL Result Set Caching..." >> $deploymentLogFile
 synapseResultSetCache=$(sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE ${synapseAnalyticsSQLPoolName} SET RESULT_SET_CACHING ON;" 2>&1)
 
-# Validate the Synapse Dedicated SQL Pool is running
+# Validate the Synapse Dedicated SQL Pool is running and we were able to establish a connection
 if [[ $synapseResultSetCache == *"Cannot connect to database when it is paused"* ]]; then
     echo "$(date) [ERROR] The Synapse Dedicated SQL Pool is paused. Please resume the pool and run this script again." | tee -a $deploymentLogFile
     exit 1;

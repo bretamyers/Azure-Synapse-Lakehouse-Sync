@@ -11,3 +11,4 @@
         3. If you DO NOT use the data lake gold -> synapse pattern already, 'Example Environment' is a quick easy
            button approach to see how it works.
 7. Rename the logging.AutoIngestion Synapse tables to logging.AutoLoader (I did it here but Bret needs to update the dev environment)
+8. Change the dedicated sql pool back to 1000dwu

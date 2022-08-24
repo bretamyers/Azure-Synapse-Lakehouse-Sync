@@ -1,14 +1,9 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Azure Databricks Lakehouse Synpase Sync: Bicep Template
+//  Azure Synapse Lakehouse Sync: Bicep Template
 //
-//    Create a Synapse Analytics environment based on best practices to achieve a successful proof of concept. While settings can be adjusted, 
-//    the major deployment differences are based on whether or not you used Private Endpoints for connectivity. If you do not already use 
-//    Private Endpoints for other Azure deployments, it's discouraged to use them for a proof of concept as they have many other networking 
-//    depandancies than what can be configured here.
-//
-//    Deploy via Azure CLI:
-//      az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Databricks-Lakehouse-Synapse-Sync --location eastus
+//    Deploy via Azure Cloud Shell (https://shell.azure.com):
+//      az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name Azure-Synapse-Lakehouse-Sync --location eastus
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -44,7 +39,7 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-01-01' = {
   tags: {
     Environment: 'PoC'
     Application: 'Azure Synapse Analytics'
-    Purpose: 'Azure Synapse Analytics Proof of Concept'
+    Purpose: 'Azure Synapse Lakehouse Sync'
   }
 }
 
