@@ -71,6 +71,11 @@ echo "$(date) [INFO] Azure AD Username: $azureUsername" >> $deploymentLogFile
 azureUsernameObjectId=$(az ad user show --id $azureUsername --query id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 echo "$(date) [INFO] Azure AD User Object Id: $azureUsernameObjectId" >> $deploymentLogFile
 
+# Display some environment details to the user
+echo "${boldText}Azure Subscription:${normalText} ${azureSubscriptionName}"
+echo "${boldText}Azure Subscription ID:${normalText} ${azureSubscriptionID}"
+echo "${boldText}Azure AD Username:${normalText} ${azureUsername}"
+
 # Update a Bicep variable if it isn't configured by the user. This allows Bicep to add the user Object Id
 # to the Storage Blob Data Contributor role on the Azure Data Lake Storage Gen2 account, which allows Synapse
 # Serverless SQL to query files on storage.
@@ -82,12 +87,14 @@ if [ $(checkBicepDeploymentState) = "DeploymentNotFound" ]; then
     bicepAzureRegion=$(jq -r .parameters.azureRegion.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
     # Bicep deployment via Azure CLI
+    echo ""
     echo "Deploying environment via Bicep. This will take several minutes..."
+    echo ""
     echo "$(date) [INFO] Starting Bicep deployment" >> $deploymentLogFile
     bicepDeploy=$(az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name $bicepDeploymentName --location $bicepAzureRegion 2>&1 | tee -a $deploymentLogFile)
 
     # Make sure the Bicep deployment was successful 
-    checkBicepDeploymentState
+    echo "${boldText}Bicep Deployment:${normalText}" $(checkBicepDeploymentState)
 else
     echo "$(date) [INFO] It appears the Bicep deployment was done manually. Skipping..." >> $deploymentLogFile
 fi
@@ -108,9 +115,6 @@ datalakeName=$(az deployment sub show --name ${bicepDeploymentName} --query prop
 synapseSQLAdministratorLoginPassword=$(jq -r .parameters.synapseSQLAdministratorLoginPassword.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
 # Display the environment details to the user
-echo "${boldText}Azure Subscription:${normalText} ${azureSubscriptionName}"
-echo "${boldText}Azure Subscription ID:${normalText} ${azureSubscriptionID}"
-echo "${boldText}Azure AD Username:${normalText} ${azureUsername}"
 echo "${boldText}Resource Group:${normalText} ${resourceGroup}"
 echo "$(date) [INFO] Resource Group: $resourceGroup" >> $deploymentLogFile
 echo "${boldText}Synapse Analytics Workspace:${normalText} ${synapseAnalyticsWorkspaceName}"
