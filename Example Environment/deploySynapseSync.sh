@@ -34,7 +34,7 @@ deploymentLogFile="deploySynapseSync.log"
 checkBicepDeploymentState () {
     bicepDeploymentCheck=$(az deployment sub show --name $bicepDeploymentName --query properties.provisioningState --output tsv 2>&1 | sed 's/[[:space:]]*//g')
     if [ "$bicepDeploymentCheck" = "Succeeded" ]; then
-        echo "Succeededs"
+        echo "Succeeded"
     elif [ "$bicepDeploymentCheck" = "Failed" ] || [ "$bicepDeploymentCheck" = "Canceled" ]; then
         echo "$(date) [ERROR] It looks like a Bicep deployment was attempted, but failed." | tee -a $deploymentLogFile
         exit 1;
@@ -42,6 +42,9 @@ checkBicepDeploymentState () {
         echo "DeploymentNotFound"
     fi
 }
+
+boldText=$(tput bold)
+normalText=$(tput sgr0)
 
 echo "$(date) [INFO] Starting deploySynapseSync.sh" >> $deploymentLogFile
 
@@ -84,7 +87,7 @@ if [ $(checkBicepDeploymentState) = "DeploymentNotFound" ]; then
     # Bicep deployment via Azure CLI
     echo "Deploying environment via Bicep. This will take several minutes..."
     echo "$(date) [INFO] Starting Bicep deployment" >> $deploymentLogFile
-    #bicepDeploy=$(az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name $bicepDeploymentName --location eastus 2>&1 | tee -a $deploymentLogFile)
+    bicepDeploy=$(az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name $bicepDeploymentName --location eastus 2>&1 | tee -a $deploymentLogFile)
 
     # Make sure the Bicep deployment was successful 
     checkBicepDeploymentState
@@ -102,19 +105,20 @@ databricksWorkspaceName=$(az deployment sub show --name ${bicepDeploymentName} -
 datalakeName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.datalakeName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 
 # Display the environment details to the user
-echo "Azure Subscription: ${azureSubscriptionName}"
-echo "Azure Subscription ID: ${azureSubscriptionID}"
-echo "Azure AD Username: ${azureUsername}"
-echo "Resource Group: ${resourceGroup}"
+echo "${boldText}Azure Subscription:${normalText} ${azureSubscriptionName}"
+echo "${boldText}Azure Subscription ID:${normalText} ${azureSubscriptionID}"
+echo "${boldText}Azure AD Username:${normalText} ${azureUsername}"
+echo "${boldText}Resource Group:${normalText} ${resourceGroup}"
 echo "$(date) [INFO] Resource Group: $resourceGroup" >> $deploymentLogFile
-echo "Synapse Analytics Workspace: ${synapseAnalyticsWorkspaceName}"
+echo "${boldText}Synapse Analytics Workspace:${normalText} ${synapseAnalyticsWorkspaceName}"
 echo "$(date) [INFO] Synapse Analytics Workspace: $synapseAnalyticsWorkspaceName" >> $deploymentLogFile
-echo "Synapse Analytics SQL Admin: ${synapseAnalyticsSQLAdmin}"
+echo "${boldText}Synapse Analytics SQL Admin:${normalText} ${synapseAnalyticsSQLAdmin}"
 echo "$(date) [INFO] Synapse Analytics SQL Admin: $synapseAnalyticsSQLAdmin" >> $deploymentLogFile
-echo "Databricks Workspace: ${databricksWorkspaceName}"
+echo "${boldText}Databricks Workspace:${normalText} ${databricksWorkspaceName}"
 echo "$(date) [INFO] Databricks Workspace: $databricksWorkspaceName" >> $deploymentLogFile
-echo "Data Lake Name: ${datalakeName}"
+echo "${boldText}Data Lake Name:${normalText} ${datalakeName}"
 echo "$(date) [INFO] Data Lake Name: $datalakeName" >> $deploymentLogFile
+echo ""
 
 # Enable the Synapse Dedicated SQL Result Set Cache
 echo "Enabling the Synapse Dedicated SQL Result Set Caching..."
@@ -167,6 +171,10 @@ sampleDataStorageSAS="?sv=2021-06-08&st=2022-08-01T04%3A00%3A00Z&se=2023-08-01T0
 echo "Copying the sample data..."
 echo "$(date) [INFO] Copying the sample data..." >> $deploymentLogFile
 az storage copy -s 'https://synapseanalyticspocdata.blob.core.windows.net/sample/AdventureWorks/'$sampleDataStorageSAS -d 'https://'$datalakeName'.blob.core.windows.net/data/Sample?'$destinationStorageSAS --recursive >> $deploymentLogFile 2>&1
+
+# Update the Parquet Auto Loader Metadata file template with the correct storage account and then upload it
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Parquet_Auto_Loader_Metadata.csv"
+az storage copy -s '../Azure Synapse Lakehouse Sync/Synapse Pipelines/Parquet_Auto_Loader_Metadata.csv' -d 'https://'"${datalakeName}"'.blob.core.windows.net/data?'"${destinationStorageSAS}" >> $deploymentLogFile 2>&1
 
 echo "Deployment Complete!"
 echo "$(date) [INFO] Deployment Complete" >> $deploymentLogFile
