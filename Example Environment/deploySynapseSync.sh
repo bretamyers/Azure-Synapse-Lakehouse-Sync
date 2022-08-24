@@ -101,9 +101,11 @@ resourceGroup=$(az deployment sub show --name ${bicepDeploymentName} --query pro
 synapseAnalyticsWorkspaceName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.synapseAnalyticsWorkspaceName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 synapseAnalyticsSQLPoolName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.synapseSQLPoolName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 synapseAnalyticsSQLAdmin=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.synapseSQLAdministratorLogin.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
-synapseAnalyticsSQLAdminPassword=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.synapseSQLAdministratorLoginPassword.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 databricksWorkspaceName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.databricksWorkspaceName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 datalakeName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.datalakeName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+
+# Get the Synapse AQL Administrator Login Password from the Bicep main.parameters.json
+synapseSQLAdministratorLoginPassword=$(jq .parameters.synapseSQLAdministratorLoginPassword.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
 # Display the environment details to the user
 echo "${boldText}Azure Subscription:${normalText} ${azureSubscriptionName}"
@@ -124,7 +126,7 @@ echo ""
 # Enable the Synapse Dedicated SQL Result Set Cache
 echo "Enabling the Synapse Dedicated SQL Result Set Caching..."
 echo "$(date) [INFO] Enabling the Synapse Dedicated SQL Result Set Caching..." >> $deploymentLogFile
-synapseResultSetCache=$(sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE ${synapseAnalyticsSQLPoolName} SET RESULT_SET_CACHING ON;" 2>&1)
+synapseResultSetCache=$(sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseSQLAdministratorLoginPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE ${synapseAnalyticsSQLPoolName} SET RESULT_SET_CACHING ON;" 2>&1)
 
 # Validate the Synapse Dedicated SQL Pool is running and we were able to establish a connection
 if [[ $synapseResultSetCache == *"Cannot connect to database when it is paused"* ]]; then
@@ -138,12 +140,12 @@ fi
 # Enable the Synapse Dedicated SQL Query Store
 echo "Enabling the Synapse Dedicated SQL Query Store..."
 echo "$(date) [INFO] Enabling the Synapse Dedicated SQL Query Store..." >> $deploymentLogFile
-sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -Q "ALTER DATABASE ${synapseAnalyticsSQLPoolName} SET QUERY_STORE = ON;"
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseSQLAdministratorLoginPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -Q "ALTER DATABASE ${synapseAnalyticsSQLPoolName} SET QUERY_STORE = ON;"
 
 # Create the Resource Class Users for the Parquet Auto Loader
 echo "Creating the Synapse Dedicated SQL Resource Class Users..."
 echo "$(date) [INFO] Creating the Synapse Dedicated SQL Resource Class Users..." >> $deploymentLogFile
-sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseAnalyticsSQLAdminPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -i "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Create_Resource_Class_Users.sql"
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseSQLAdministratorLoginPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -i "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Create_Resource_Class_Users.sql"
 
 # Create the LS_Synapse_Managed_Identity Linked Service. This is primarily used for the Auto Loader pipeline.
 echo "Creating the Synapse Workspace Linked Service..."

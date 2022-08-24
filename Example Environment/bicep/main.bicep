@@ -89,7 +89,5 @@ module databricksWorkspace 'modules/databricksWorkspace.bicep' = {
 output synapseAnalyticsWorkspaceName string = synapseAnalytics.outputs.synapseAnalyticsWorkspaceName
 output synapseSQLPoolName string = synapseSQLPoolName
 output synapseSQLAdministratorLogin string = synapseSQLAdministratorLogin
-#disable-next-line outputs-should-not-contain-secrets
-output synapseSQLAdministratorLoginPassword string = synapseSQLAdministratorLoginPassword
 output databricksWorkspaceName string = databricksWorkspace.outputs.databricksWorkspaceName
 output datalakeName string = synapseStorageAccount.outputs.synapseStorageAccountName
