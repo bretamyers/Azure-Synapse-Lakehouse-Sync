@@ -79,7 +79,7 @@ sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${azureUsernameObjectId}/g" b
 # Check to see if the Bicep deployment was already completed manually. If not, lets do it.
 if [ $(checkBicepDeploymentState) = "DeploymentNotFound" ]; then
     # Get the Azure Region from the Bicep main.parameters.json
-    bicepAzureRegion=$(jq .parameters.azureRegion.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
+    bicepAzureRegion=$(jq -r .parameters.azureRegion.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
     # Bicep deployment via Azure CLI
     echo "Deploying environment via Bicep. This will take several minutes..."
@@ -105,7 +105,7 @@ databricksWorkspaceName=$(az deployment sub show --name ${bicepDeploymentName} -
 datalakeName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.datalakeName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 
 # Get the Synapse AQL Administrator Login Password from the Bicep main.parameters.json
-synapseSQLAdministratorLoginPassword=$(jq .parameters.synapseSQLAdministratorLoginPassword.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
+synapseSQLAdministratorLoginPassword=$(jq -r .parameters.synapseSQLAdministratorLoginPassword.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
 # Display the environment details to the user
 echo "${boldText}Azure Subscription:${normalText} ${azureSubscriptionName}"
