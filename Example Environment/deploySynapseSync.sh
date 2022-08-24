@@ -36,7 +36,7 @@ checkBicepDeploymentState () {
     if [ "$bicepDeploymentCheck" = "Succeeded" ]; then
         echo "Succeeded"
     elif [ "$bicepDeploymentCheck" = "Failed" ] || [ "$bicepDeploymentCheck" = "Canceled" ]; then
-        echo "$(date) [ERROR] It looks like a Bicep deployment was attempted, but failed." | tee -a $deploymentLogFile
+        echo "$(date) [ERROR] It looks like a Bicep deployment was attempted but failed." | tee -a $deploymentLogFile
         exit 1;
     elif [[ $bicepDeploymentCheck == *"DeploymentNotFound"* ]]; then
         echo "DeploymentNotFound"
