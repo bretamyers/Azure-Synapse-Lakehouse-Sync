@@ -28,7 +28,7 @@
 # Part 1: Environment Deployment
 #
 
-bicepDeploymentName="Azure-Databricks-Lakehouse-Synapse-Sync"
+bicepDeploymentName="Azure-Synapse-Lakehouse-Sync"
 deploymentLogFile="deploySynapseSync.log"
 
 checkBicepDeploymentState () {
