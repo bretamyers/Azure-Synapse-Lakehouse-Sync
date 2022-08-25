@@ -93,12 +93,12 @@ if [ $(checkBicepDeploymentState) = "DeploymentNotFound" ]; then
     echo ""
     echo "$(date) [INFO] Starting Bicep deployment" >> $deploymentLogFile
     bicepDeploy=$(az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name $bicepDeploymentName --location $bicepAzureRegion 2>&1 | tee -a $deploymentLogFile)
-
-    # Make sure the Bicep deployment was successful 
-    echo "${boldText}Bicep Deployment:${normalText}" $(checkBicepDeploymentState)
 else
     echo "$(date) [INFO] It appears the Bicep deployment was done manually. Skipping..." >> $deploymentLogFile
 fi
+
+# Make sure the Bicep deployment was successful 
+echo "${boldText}Bicep Deployment:${normalText}" $(checkBicepDeploymentState)
 
 #
 # Part 2: Post-Deployment Configuration
