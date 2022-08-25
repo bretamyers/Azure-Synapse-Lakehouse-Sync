@@ -12,3 +12,4 @@
            button approach to see how it works.
 7. Rename the logging.AutoIngestion Synapse tables to logging.AutoLoader (I did it here but Bret needs to update the dev environment)
 8. Change the dedicated sql pool back to 1000dwu
+9. Do we want to include sample synapse sql queries to show what's happening/changed?
