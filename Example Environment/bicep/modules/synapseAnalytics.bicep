@@ -24,7 +24,7 @@ resource synapseStorageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' ex
 // Synapse Analytics Workspace
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/overview-what-is
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces
-resource synapseWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
+resource synapseAnalyticsWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
   name: 'synapsesync${resourceSuffix}'
   location: azureRegion
   identity: {
@@ -45,10 +45,10 @@ resource synapseWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
 resource synapseStorageWorkspacePermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
-  name: guid(synapseWorkspace.id, subscription().subscriptionId, 'Contributor')
+  name: guid(synapseAnalyticsWorkspace.id, subscription().subscriptionId, 'Contributor')
   scope: synapseStorageAccount
   properties: {
-    principalId: synapseWorkspace.identity.principalId
+    principalId: synapseAnalyticsWorkspace.identity.principalId
     roleDefinitionId: '/providers/Microsoft.Authorization/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe'
   }
 }
@@ -57,7 +57,7 @@ resource synapseStorageWorkspacePermissions 'Microsoft.Authorization/roleAssignm
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
 resource synapseStorageAzureADAdminPermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
-  name: guid(synapseWorkspace.id, synapseAzureADAdminObjectId, 'Contributor')
+  name: guid(synapseAnalyticsWorkspace.id, synapseAzureADAdminObjectId, 'Contributor')
   scope: synapseStorageAccount
   properties: {
     principalId: synapseAzureADAdminObjectId
@@ -70,7 +70,7 @@ resource synapseStorageAzureADAdminPermissions 'Microsoft.Authorization/roleAssi
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/sqlpools
 resource synapseSQLPool 'Microsoft.Synapse/workspaces/sqlPools@2021-06-01' = {
   name: synapseSQLPoolName
-  parent: synapseWorkspace
+  parent: synapseAnalyticsWorkspace
   location: azureRegion
   sku: {
     name: 'DW100c'
@@ -92,7 +92,7 @@ resource synapseSQLPoolGeoBackups 'Microsoft.Synapse/workspaces/sqlPools/geoBack
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/synapse-workspace-ip-firewall
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/firewallrules
 resource synapseFirewallAllowAzureServices 'Microsoft.Synapse/workspaces/firewallRules@2021-06-01' = {
-  name: '${synapseWorkspace.name}/AllowAllWindowsAzureIps'
+  name: '${synapseAnalyticsWorkspace.name}/AllowAllWindowsAzureIps'
   properties: {
     endIpAddress: '0.0.0.0'
     startIpAddress: '0.0.0.0'
@@ -103,11 +103,11 @@ resource synapseFirewallAllowAzureServices 'Microsoft.Synapse/workspaces/firewal
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/synapse-workspace-ip-firewall
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/firewallrules
 resource synapseFirewallAllowAll 'Microsoft.Synapse/workspaces/firewallRules@2021-06-01' = {
-  name: '${synapseWorkspace.name}/AllowAll'
+  name: '${synapseAnalyticsWorkspace.name}/AllowAll'
   properties: {
     endIpAddress: '255.255.255.255'
     startIpAddress: '0.0.0.0'
   }
 }
 
-output synapseAnalyticsWorkspaceName string = synapseWorkspace.name
+output synapseAnalyticsWorkspace object = synapseAnalyticsWorkspace

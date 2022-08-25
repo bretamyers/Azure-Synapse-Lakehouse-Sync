@@ -25,4 +25,4 @@ resource databricksWorkspace 'Microsoft.Databricks/workspaces@2021-04-01-preview
   }
 }
 
-output databricksWorkspaceName string = databricksWorkspace.name
+output databricksWorkspace object = databricksWorkspace

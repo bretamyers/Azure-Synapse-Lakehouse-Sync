@@ -49,10 +49,10 @@ normalText=$(tput sgr0)
 echo "$(date) [INFO] Starting deploySynapseSync.sh" >> $deploymentLogFile
 
 # Try and determine if we're executing from within the Azure Cloud Shell
-if [ ! "${AZUREPS_HOST_ENVIRONMENT}" = "cloud-shell/1.0" ]; then
-    echo "$(date) [ERROR] It doesn't appear you are executing this from the Azure Cloud Shell. Please use the Azure Cloud Shell at https://shell.azure.com" | tee -a $deploymentLogFile
-    exit 1;
-fi
+#if [ ! "${AZUREPS_HOST_ENVIRONMENT}" = "cloud-shell/1.0" ]; then
+#    echo "$(date) [ERROR] It doesn't appear you are executing this from the Azure Cloud Shell. Please use the Azure Cloud Shell at https://shell.azure.com" | tee -a $deploymentLogFile
+#    exit 1;
+#fi
 
 # Try and get a token to validate that we're logged into Azure CLI
 aadToken=$(az account get-access-token --resource=https://dev.azuresynapse.net --query accessToken --output tsv 2>&1 | sed 's/[[:space:]]*//g')
@@ -79,12 +79,12 @@ echo "${boldText}Azure AD Username:${normalText} ${azureUsername}"
 # Update a Bicep variable if it isn't configured by the user. This allows Bicep to add the user Object Id
 # to the Storage Blob Data Contributor role on the Azure Data Lake Storage Gen2 account, which allows Synapse
 # Serverless SQL to query files on storage.
-sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${azureUsernameObjectId}/g" bicep/main.parameters.json 2>&1
+sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${azureUsernameObjectId}/g" Bicep/main.parameters.json 2>&1
 
 # Check to see if the Bicep deployment was already completed manually. If not, lets do it.
 if [ $(checkBicepDeploymentState) = "DeploymentNotFound" ]; then
     # Get the Azure Region from the Bicep main.parameters.json
-    bicepAzureRegion=$(jq -r .parameters.azureRegion.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
+    bicepAzureRegion=$(jq -r .parameters.azureRegion.value Bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
     # Bicep deployment via Azure CLI
     echo ""
@@ -109,10 +109,11 @@ synapseAnalyticsWorkspaceName=$(az deployment sub show --name ${bicepDeploymentN
 synapseAnalyticsSQLPoolName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.synapseSQLPoolName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 synapseAnalyticsSQLAdmin=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.synapseSQLAdministratorLogin.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 databricksWorkspaceName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.databricksWorkspaceName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+databricksWorkspaceUrl=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.databricksWorkspaceUrl.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 datalakeName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.datalakeName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 
 # Get the Synapse AQL Administrator Login Password from the Bicep main.parameters.json
-synapseSQLAdministratorLoginPassword=$(jq -r .parameters.synapseSQLAdministratorLoginPassword.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
+synapseSQLAdministratorLoginPassword=$(jq -r .parameters.synapseSQLAdministratorLoginPassword.value Bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
 # Display the environment details to the user
 echo "${boldText}Resource Group:${normalText} ${resourceGroup}"
@@ -149,25 +150,25 @@ sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseSQLAdministratorLoginPassword}
 # Create the Resource Class Users for the Parquet Auto Loader
 echo "Creating the Synapse Dedicated SQL Resource Class Users..."
 echo "$(date) [INFO] Creating the Synapse Dedicated SQL Resource Class Users..." >> $deploymentLogFile
-sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseSQLAdministratorLoginPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -i "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Create_Resource_Class_Users.sql"
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseSQLAdministratorLoginPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -i "../Azure Synapse Lakehouse Sync/Synapse/Create_Resource_Class_Users.sql"
 
 # Create the LS_Synapse_Managed_Identity Linked Service. This is primarily used for the Auto Loader pipeline.
 echo "Creating the Synapse Workspace Linked Service..."
 echo "$(date) [INFO] Creating the Synapse Workspace Linked Service..." >> $deploymentLogFile
-az synapse linked-service create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name LS_Synapse_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse Pipelines/LS_Synapse_Managed_Identity.json"
+az synapse linked-service create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name LS_Synapse_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse/LS_Synapse_Managed_Identity.json"
 
 # Create the DS_Synapse_Managed_Identity Dataset. This is primarily used for the Auto Loader pipeline.
 echo "Creating the Synapse Workspace Dataset..."
 echo "$(date) [INFO] Creating the Synapse Workspace Dataset..." >> $deploymentLogFile
-az synapse dataset create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name DS_Synapse_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse Pipelines/DS_Synapse_Managed_Identity.json"
+az synapse dataset create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name DS_Synapse_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse/DS_Synapse_Managed_Identity.json"
 
 # Copy the Parquet Auto Loader Pipeline template and update the variables
-cp "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Parquet_Auto_Loader.json.tmpl" "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Parquet_Auto_Loader.json" 2>&1
-sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Parquet_Auto_Loader.json"
-sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Parquet_Auto_Loader.json"
+cp "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json.tmpl" "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json" 2>&1
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json"
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json"
 
 # Create the Parquet Auto Loader Pipeline in the Synapse Analytics Workspace
-az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Parquet Auto Loader" --file @"../Azure Synapse Lakehouse Sync/Synapse Pipelines/Parquet_Auto_Loader.json" >> $deploymentLogFile 2>&1
+az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Parquet Auto Loader" --file @"../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json" >> $deploymentLogFile 2>&1
 
 # Generate a SAS for the data lake so we can upload some files
 tomorrowsDate=$(date --date="tomorrow" +%Y-%m-%d)
@@ -180,8 +181,17 @@ echo "$(date) [INFO] Copying the sample data..." >> $deploymentLogFile
 az storage copy -s 'https://synapseanalyticspocdata.blob.core.windows.net/sample/AdventureWorks/'$sampleDataStorageSAS -d 'https://'$datalakeName'.blob.core.windows.net/data/Sample?'$destinationStorageSAS --recursive >> $deploymentLogFile 2>&1
 
 # Update the Parquet Auto Loader Metadata file template with the correct storage account and then upload it
-sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse Pipelines/Parquet_Auto_Loader_Metadata.csv"
-az storage copy -s '../Azure Synapse Lakehouse Sync/Synapse Pipelines/Parquet_Auto_Loader_Metadata.csv' -d 'https://'"${datalakeName}"'.blob.core.windows.net/data?'"${destinationStorageSAS}" >> $deploymentLogFile 2>&1
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader_Metadata.csv"
+az storage copy -s '../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader_Metadata.csv' -d 'https://'"${datalakeName}"'.blob.core.windows.net/data?'"${destinationStorageSAS}" >> $deploymentLogFile 2>&1
+
+# Get the Databricks Workspace Azure AD accessToken for authentication
+echo "$(date) [INFO] Getting the Databricks Workspace Azure AD accessToken..." >> $deploymentLogFile
+databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output tsv --query accessToken 2>&1 | sed 's/[[:space:]]*//g')
+
+# Create the Databricks Cluster
+echo "Creating the Databricks Cluster definition..."
+echo "$(date) [INFO] Creating the Databricks Cluster definition..." >> $deploymentLogFile
+createDatabricksCluster=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/deltaLoadingCluster.json" --verbose --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" 2>&1 | tee -a $deploymentLogFile)
 
 echo "Deployment Complete!"
 echo "$(date) [INFO] Deployment Complete" >> $deploymentLogFile
