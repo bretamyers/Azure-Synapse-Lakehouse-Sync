@@ -51,4 +51,4 @@ resource synapseDataStorageContainer 'Microsoft.Storage/storageAccounts/blobServ
   name: '${synapseStorageAccount.name}/default/data'
 }
 
-output synapseStorageAccount object = synapseStorageAccount
+output synapseStorageAccountName string = synapseStorageAccount.name

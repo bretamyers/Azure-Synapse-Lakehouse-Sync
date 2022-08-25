@@ -86,9 +86,9 @@ module databricksWorkspace 'modules/databricksWorkspace.bicep' = {
 }
 
 // Outputs for reference in the deploySynapseSync.sh Post-Deployment Configuration
-output synapseAnalyticsWorkspaceName string = synapseAnalytics.outputs.synapseAnalyticsWorkspace.name
+output synapseAnalyticsWorkspaceName string = synapseAnalytics.outputs.synapseAnalyticsWorkspaceName
 output synapseSQLPoolName string = synapseSQLPoolName
 output synapseSQLAdministratorLogin string = synapseSQLAdministratorLogin
-output databricksWorkspaceName string = databricksWorkspace.outputs.databricksWorkspace.name
-output datalakeName string = synapseStorageAccount.outputs.synapseStorageAccount.name
-output databricksWorkspaceUrl string = databricksWorkspace.outputs.databricksWorkspace.properties.workspaceUrl
+output databricksWorkspaceName string = databricksWorkspace.outputs.databricksWorkspaceName
+output datalakeName string = synapseStorageAccount.outputs.synapseStorageAccountName
+output databricksWorkspaceUrl string = databricksWorkspace.outputs.databricksWorkspaceUrl

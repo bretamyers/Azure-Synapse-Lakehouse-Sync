@@ -110,4 +110,4 @@ resource synapseFirewallAllowAll 'Microsoft.Synapse/workspaces/firewallRules@202
   }
 }
 
-output synapseAnalyticsWorkspace object = synapseAnalyticsWorkspace
+output synapseAnalyticsWorkspaceName string = synapseAnalyticsWorkspace.name
