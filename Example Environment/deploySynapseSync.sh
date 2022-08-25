@@ -43,16 +43,17 @@ checkBicepDeploymentState () {
     fi
 }
 
+# User output formatting
 boldText=$(tput bold)
 normalText=$(tput sgr0)
 
 echo "$(date) [INFO] Starting deploySynapseSync.sh" >> $deploymentLogFile
 
 # Try and determine if we're executing from within the Azure Cloud Shell
-#if [ ! "${AZUREPS_HOST_ENVIRONMENT}" = "cloud-shell/1.0" ]; then
-#    echo "$(date) [ERROR] It doesn't appear you are executing this from the Azure Cloud Shell. Please use the Azure Cloud Shell at https://shell.azure.com" | tee -a $deploymentLogFile
-#    exit 1;
-#fi
+if [ ! "${AZUREPS_HOST_ENVIRONMENT}" = "cloud-shell/1.0" ]; then
+    echo "$(date) [ERROR] It doesn't appear you are executing this from the Azure Cloud Shell. Please use the Azure Cloud Shell at https://shell.azure.com" | tee -a $deploymentLogFile
+    exit 1;
+fi
 
 # Try and get a token to validate that we're logged into Azure CLI
 aadToken=$(az account get-access-token --resource=https://dev.azuresynapse.net --query accessToken --output tsv 2>&1 | sed 's/[[:space:]]*//g')
@@ -189,9 +190,23 @@ echo "$(date) [INFO] Getting the Databricks Workspace Azure AD accessToken..." >
 databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output tsv --query accessToken 2>&1 | sed 's/[[:space:]]*//g')
 
 # Create the Databricks Cluster
-echo "Creating the Databricks Cluster definition..."
+echo "Creating the Databricks Workspace Cluster definition..."
 echo "$(date) [INFO] Creating the Databricks Cluster definition..." >> $deploymentLogFile
-createDatabricksCluster=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/deltaLoadingCluster.json" --verbose --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" 2>&1 | tee -a $deploymentLogFile)
+createDatabricksCluster=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/deltaLoadingCluster.json" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" 2>&1 | tee -a $deploymentLogFile)
+
+# Create the Databricks Notebooks
+# 
+# We base64 encode the notebook DBC files because thats how they need to be uploaded to the 
+# Databricks API. We're writing out to a temporary file and using that file to POST via 
+# 'az rest' because of a WSL bug instead of trying to pass the base64 string as a parameter. 
+# While this script should be executed from the Azure Cloud Shell anyway, we're trying to 
+# maintain as much compatibility as possible for potential future updates.
+echo "Creating the Databricks Workspace Notebooks..."
+echo "$(date) [INFO] Creating the Databricks notebooks..." >> $deploymentLogFile
+createDatabricksCDCNotebook=$(base64 -w 0 "../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.dbc" 2>&1 | sed 's/[[:space:]]*//g')
+echo "{\"path\":\"/Synapse Sync CDC\",\"content\":\"$createDatabricksCDCNotebook\", \"format\": \"DBC\" }" > "../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.json.tmp"
+createDatabricksCluster=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/workspace/import --body "@../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.json.tmp" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\",\"Content-Type\":\"application/json\"}" 2>&1 | tee -a $deploymentLogFile)
+rm "../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.json.tmp"
 
 echo "Deployment Complete!"
 echo "$(date) [INFO] Deployment Complete" >> $deploymentLogFile
