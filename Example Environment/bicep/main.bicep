@@ -53,6 +53,20 @@ module synapseStorageAccount 'modules/storageAccount.bicep' = {
   }
 }
 
+// Create the Azure Key Vault
+module keyVault 'modules/keyVault.bicep' = {
+  name: 'keyVault'
+  scope: resourceGroup
+  params: {
+    resourceSuffix: resourceSuffix
+    azureRegion: azureRegion
+  }
+
+  dependsOn: [
+    synapseStorageAccount
+  ]
+}
+
 // Create the Synapse Analytics Workspace
 module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
   name: 'synapseAnalytics'
@@ -92,3 +106,5 @@ output synapseSQLAdministratorLogin string = synapseSQLAdministratorLogin
 output databricksWorkspaceName string = databricksWorkspace.outputs.databricksWorkspaceName
 output datalakeName string = synapseStorageAccount.outputs.synapseStorageAccountName
 output databricksWorkspaceUrl string = databricksWorkspace.outputs.databricksWorkspaceUrl
+output keyVaultVaultUri string = keyVault.outputs.keyVaultVaultUri
+output keyVaultId string = keyVault.outputs.keyVaultId

@@ -112,6 +112,8 @@ synapseAnalyticsSQLAdmin=$(az deployment sub show --name ${bicepDeploymentName} 
 databricksWorkspaceName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.databricksWorkspaceName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 databricksWorkspaceUrl=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.databricksWorkspaceUrl.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 datalakeName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.datalakeName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+keyVaultVaultUri=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.keyVaultVaultUri.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+keyVaultId=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.keyVaultId.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 
 # Get the Synapse AQL Administrator Login Password from the Bicep main.parameters.json
 synapseSQLAdministratorLoginPassword=$(jq -r .parameters.synapseSQLAdministratorLoginPassword.value Bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
@@ -193,6 +195,11 @@ databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab
 echo "Creating the Databricks Workspace Cluster definition..."
 echo "$(date) [INFO] Creating the Databricks Cluster definition..." >> $deploymentLogFile
 createDatabricksCluster=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/deltaLoadingCluster.json" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" 2>&1 | tee -a $deploymentLogFile)
+
+# Create the Azure Key Vault Scope
+echo "Creating the Databricks Workspace Azure Key Vault Scope..."
+echo "$(date) [INFO] Creating the Databricks Azure Key Vault Scope..." >> $deploymentLogFile
+createDatabricksKeyVaultScope=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/secrets/scopes/create --body \\"{ \"scope\": \"DataLakeStorageKey\", \"scope_backend_type\": \"AZURE_KEYVAULT\", \"backend_azure_keyvault\": { \"resource_id\": \"$keyVaultId\", \"dns_name\": \"$keyVaultVaultUri\" }, \"initial_manage_principal\": \"users\" }" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" 2>&1 | tee -a $deploymentLogFile)
 
 # Create the Databricks Notebooks
 # 
