@@ -199,7 +199,7 @@ createDatabricksCluster=$(az rest --method post --url https://${databricksWorksp
 # Create the Azure Key Vault Scope
 echo "Creating the Databricks Workspace Azure Key Vault Scope..."
 echo "$(date) [INFO] Creating the Databricks Azure Key Vault Scope..." >> $deploymentLogFile
-createDatabricksKeyVaultScope=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/secrets/scopes/create --body \\"{ \"scope\": \"DataLakeStorageKey\", \"scope_backend_type\": \"AZURE_KEYVAULT\", \"backend_azure_keyvault\": { \"resource_id\": \"$keyVaultId\", \"dns_name\": \"$keyVaultVaultUri\" }, \"initial_manage_principal\": \"users\" }" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" 2>&1 | tee -a $deploymentLogFile)
+createDatabricksKeyVaultScope=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/secrets/scopes/create --body "{ \"scope\": \"DataLakeStorageKey\", \"scope_backend_type\": \"AZURE_KEYVAULT\", \"backend_azure_keyvault\": { \"resource_id\": \"$keyVaultId\", \"dns_name\": \"$keyVaultVaultUri\" }, \"initial_manage_principal\": \"users\" }" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" 2>&1 | tee -a $deploymentLogFile)
 
 # Create the Databricks Notebooks
 # 
