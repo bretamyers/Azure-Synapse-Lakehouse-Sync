@@ -21,6 +21,11 @@ resource synapseStorageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' ex
   name: 'synapsesync${resourceSuffix}'
 }
 
+// Reference to the Databricks workspace we created
+resource databricksWorkspace 'Microsoft.Databricks/workspaces@2021-04-01-preview' existing = {
+  name: 'synapsesync${resourceSuffix}'
+}
+
 // Synapse Analytics Workspace
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/overview-what-is
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces
@@ -38,6 +43,17 @@ resource synapseAnalyticsWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
     }
     sqlAdministratorLogin: synapseSQLAdministratorLogin
     sqlAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
+  }
+}
+
+// Azure Databricks Permissions: Give the Synapse Analytics Workspace Managed Identity permissions to Azure Databricks
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
+resource synapseDatabricksWorkspacePermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
+  name: guid(databricksWorkspace.id, subscription().subscriptionId, 'Contributor')
+  scope: databricksWorkspace
+  properties: {
+    principalId: synapseAnalyticsWorkspace.identity.principalId
+    roleDefinitionId: '/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c'
   }
 }
 

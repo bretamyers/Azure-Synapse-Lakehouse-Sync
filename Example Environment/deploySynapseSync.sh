@@ -111,6 +111,7 @@ synapseAnalyticsSQLPoolName=$(az deployment sub show --name ${bicepDeploymentNam
 synapseAnalyticsSQLAdmin=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.synapseSQLAdministratorLogin.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 databricksWorkspaceName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.databricksWorkspaceName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 databricksWorkspaceUrl=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.databricksWorkspaceUrl.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+databricksWorkspaceId=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.databricksWorkspaceId.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 datalakeName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.datalakeName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 keyVaultVaultUri=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.keyVaultVaultUri.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 keyVaultId=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.keyVaultId.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
@@ -166,6 +167,8 @@ echo "$(date) [INFO] Creating the Synapse Workspace Dataset..." >> $deploymentLo
 az synapse dataset create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name DS_Synapse_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse/DS_Synapse_Managed_Identity.json"
 
 # Copy the Parquet Auto Loader Pipeline template and update the variables
+echo "Creating the Parquet Auto Loader Pipeline..."
+echo "$(date) [INFO] Creating the Parquet Auto Loader Pipeline..." >> $deploymentLogFile
 cp "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json.tmpl" "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json" 2>&1
 sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json"
 sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json"
@@ -194,7 +197,7 @@ databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab
 # Create the Databricks Cluster
 echo "Creating the Databricks Workspace Cluster definition..."
 echo "$(date) [INFO] Creating the Databricks Cluster definition..." >> $deploymentLogFile
-createDatabricksCluster=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/deltaLoadingCluster.json" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" 2>&1 | tee -a $deploymentLogFile)
+createDatabricksCluster=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/deltaLoadingCluster.json" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" --query cluster_id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 
 # Create the Azure Key Vault Scope
 echo "Creating the Databricks Workspace Azure Key Vault Scope..."
@@ -212,8 +215,19 @@ echo "Creating the Databricks Workspace Notebooks..."
 echo "$(date) [INFO] Creating the Databricks notebooks..." >> $deploymentLogFile
 createDatabricksCDCNotebook=$(base64 -w 0 "../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.dbc" 2>&1 | sed 's/[[:space:]]*//g')
 echo "{\"path\":\"/Synapse Sync CDC\",\"content\":\"$createDatabricksCDCNotebook\", \"format\": \"DBC\" }" > "../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.json.tmp"
-createDatabricksCluster=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/workspace/import --body "@../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.json.tmp" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\",\"Content-Type\":\"application/json\"}" 2>&1 | tee -a $deploymentLogFile)
+createDatabricksCDCNotebook=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/workspace/import --body "@../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.json.tmp" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\",\"Content-Type\":\"application/json\"}" 2>&1 | tee -a $deploymentLogFile)
 rm "../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.json.tmp"
+
+# Create the LS_AzureDatabricks_Managed_Identity Linked Service.
+echo "Creating the Databricks Workspace Linked Service..."
+echo "$(date) [INFO] Creating the Databricks Workspace Linked Service..." >> $deploymentLogFile
+#databricksClusterId=$(az rest --method get --url https://${databricksWorkspaceUrl}/api/2.0/clusters/list --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" --query clusters[0].cluster_id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+cp "../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json.tmpl" "../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json" 2>&1
+sed -i "s/REPLACE_DATABRICKS_WORKSPACE_URL/${databricksWorkspaceUrl}/g" "../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json"
+sed -i "s/REPLACE_DATABRICKS_WORKSPACE_ID/${databricksWorkspaceId}/g" "../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json"
+sed -i "s/REPLACE_DATABRICKS_CLUSTER_ID/${createDatabricksCluster}/g" "../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json"
+az synapse linked-service create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name LS_AzureDatabricks_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json"
+
 
 echo "Deployment Complete!"
 echo "$(date) [INFO] Deployment Complete" >> $deploymentLogFile

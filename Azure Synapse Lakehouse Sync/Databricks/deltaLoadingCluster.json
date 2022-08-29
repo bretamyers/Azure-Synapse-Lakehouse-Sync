@@ -1,9 +1,8 @@
 {
-    "num_workers": 8,
+    "num_workers": 4,
     "cluster_name": "deltaLoadingCluster",
-    "spark_version": "11.1.x-scala2.12",
+    "spark_version": "10.5.x-scala2.12",
     "spark_conf": {
-        "fs.azure.account.key.adlsbrmyers.dfs.core.windows.net": "UGAhJ3mcTUzADJt7byM4oHD+LDNf3yptmcXAXA+mue9U4x5zg1VXHmsSUrXfiSrrp8RH7d3Ii7IojVIaqnc+bQ==",
         "spark.databricks.delta.preview.enabled": "true"
     },
     "azure_attributes": {
@@ -11,8 +10,8 @@
         "availability": "SPOT_WITH_FALLBACK_AZURE",
         "spot_bid_max_price": -1
     },
-    "node_type_id": "Standard_D32s_v3",
-    "driver_node_type_id": "Standard_D32s_v3",
+    "node_type_id": "Standard_DS3_v2",
+    "driver_node_type_id": "Standard_DS3_v2",
     "ssh_public_keys": [],
     "custom_tags": {},
     "spark_env_vars": {},

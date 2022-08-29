@@ -82,6 +82,7 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
 
   dependsOn: [
     synapseStorageAccount
+    databricksWorkspace
   ]
 }
 
@@ -104,7 +105,8 @@ output synapseAnalyticsWorkspaceName string = synapseAnalytics.outputs.synapseAn
 output synapseSQLPoolName string = synapseSQLPoolName
 output synapseSQLAdministratorLogin string = synapseSQLAdministratorLogin
 output databricksWorkspaceName string = databricksWorkspace.outputs.databricksWorkspaceName
-output datalakeName string = synapseStorageAccount.outputs.synapseStorageAccountName
 output databricksWorkspaceUrl string = databricksWorkspace.outputs.databricksWorkspaceUrl
+output databricksWorkspaceId string = databricksWorkspace.outputs.databricksWorkspaceId
+output datalakeName string = synapseStorageAccount.outputs.synapseStorageAccountName
 output keyVaultVaultUri string = keyVault.outputs.keyVaultVaultUri
 output keyVaultId string = keyVault.outputs.keyVaultId
