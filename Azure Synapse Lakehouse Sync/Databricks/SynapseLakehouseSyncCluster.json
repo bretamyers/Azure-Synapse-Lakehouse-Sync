@@ -1,7 +1,7 @@
 {
     "num_workers": 4,
-    "cluster_name": "deltaLoadingCluster",
-    "spark_version": "10.5.x-scala2.12",
+    "cluster_name": "SynapseLakehouseSyncCluster",
+    "spark_version": "11.1.x-scala2.12",
     "spark_conf": {
         "spark.databricks.delta.preview.enabled": "true"
     },

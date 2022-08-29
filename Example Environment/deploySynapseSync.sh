@@ -197,7 +197,7 @@ databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab
 # Create the Databricks Cluster
 echo "Creating the Databricks Workspace Cluster definition..."
 echo "$(date) [INFO] Creating the Databricks Cluster definition..." >> $deploymentLogFile
-createDatabricksCluster=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/deltaLoadingCluster.json" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" --query cluster_id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+createDatabricksCluster=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/SynapseLakehouseSyncCluster.json" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" --query cluster_id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 
 # Create the Azure Key Vault Scope
 echo "Creating the Databricks Workspace Azure Key Vault Scope..."
