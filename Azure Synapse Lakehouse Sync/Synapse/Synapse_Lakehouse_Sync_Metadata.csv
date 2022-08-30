@@ -1,7 +1,7 @@
 ﻿PoolName,DatabaseName,TableName,KeyColumns,FolderPathFull,ChangesFolderPathFull
-DataWarehouse,AdventureWorks,FactInternetSales,_Id,abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/AdventureWorks/FactInternetSales/,abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/
-DataWarehouse,AdventureWorks,FactResellerSales,"SalesOrderNumber,SalesOrderLineNumber",abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/AdventureWorks/FactResellerSales/,abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/
-DataWarehouse,AdventureWorks,DimCustomer,_Id,abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/AdventureWorks/DimCustomer/,abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/
-DataWarehouse,AdventureWorks,DimDate,_Id,abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/AdventureWorks/DimDate/,abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/
-DataWarehouse,AdventureWorks,DimProduct,_Id,abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/AdventureWorks/DimProduct,abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/
-DataWarehouse,AdventureWorks,DimPromotion,_Id,abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/AdventureWorks/DimPromotion,abfss://data@synapsesyncjjb.dfs.core.windows.net/Sample/
+DataWarehouse,AdventureWorks,FactInternetSales,_Id,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/AdventureWorks/FactInternetSales/,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/
+DataWarehouse,AdventureWorks,FactResellerSales,"SalesOrderNumber,SalesOrderLineNumber",abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/AdventureWorks/FactResellerSales/,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/
+DataWarehouse,AdventureWorks,DimCustomer,_Id,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/AdventureWorks/DimCustomer/,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/
+DataWarehouse,AdventureWorks,DimDate,_Id,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/AdventureWorks/DimDate/,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/
+DataWarehouse,AdventureWorks,DimProduct,_Id,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/AdventureWorks/DimProduct,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/
+DataWarehouse,AdventureWorks,DimPromotion,_Id,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/AdventureWorks/DimPromotion,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/
