@@ -1,0 +1,611 @@
+{
+    "name": "SynapseLakehouseSync",
+    "properties": {
+        "activities": [
+            {
+                "name": "Lookup - Sync Pools",
+                "type": "Lookup",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlDWSource",
+                        "sqlReaderQuery": {
+                            "value": "@concat('SELECT *\nFROM OPENROWSET(\n        BULK ''', pipeline().parameters.StorageAccountNameMetadata, ''',\n        FORMAT = ''CSV'',\n        PARSER_VERSION = ''2.0'', \n        HEADER_ROW = TRUE\n    ) AS [result]')",
+                            "type": "Expression"
+                        },
+                        "queryTimeout": "02:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Synapse_Managed_Identity",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "ServerName": {
+                                "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+                                "type": "Expression"
+                            },
+                            "DatabaseName": "master"
+                        }
+                    },
+                    "firstRowOnly": false
+                }
+            },
+            {
+                "name": "ForEach - Lakehouse Table",
+                "type": "ForEach",
+                "dependsOn": [
+                    {
+                        "activity": "ForEach - Pool Schema",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Filter - Table Exists - Incremental",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@variables('PoolSchemaTableArray')",
+                        "type": "Expression"
+                    },
+                    "activities": [
+                        {
+                            "name": "Spark - Synapse Lakehouse Sync ADLS",
+                            "type": "DatabricksNotebook",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "notebookPath": "/Synapse Lakehouse Sync/Synapse Lakehouse Sync ADLS",
+                                "baseParameters": {
+                                    "FolderPathFull": {
+                                        "value": "@item().FolderPathFull",
+                                        "type": "Expression"
+                                    },
+                                    "DatabaseName": {
+                                        "value": "@item().DatabaseName",
+                                        "type": "Expression"
+                                    },
+                                    "TableName": {
+                                        "value": "@item().TableName",
+                                        "type": "Expression"
+                                    },
+                                    "ChangesFolderPathFull": {
+                                        "value": "@item().ChangesFolderPathFull",
+                                        "type": "Expression"
+                                    },
+                                    "ExistsFlagSynapse": {
+                                        "value": "@item().ExistsFlagSynapse",
+                                        "type": "Expression"
+                                    },
+                                    "PoolName": {
+                                        "value": "@item().PoolName",
+                                        "type": "Expression"
+                                    },
+                                    "KeyColumns": {
+                                        "value": "@item().KeyColumns",
+                                        "type": "Expression"
+                                    }
+                                }
+                            },
+                            "linkedServiceName": {
+                                "referenceName": "LS_AzureDatabricks_Managed_Identity",
+                                "type": "LinkedServiceReference"
+                            }
+                        },
+                        {
+                            "name": "Append variable - DatabricksOutputArray",
+                            "type": "AppendVariable",
+                            "dependsOn": [
+                                {
+                                    "activity": "Spark - Synapse Lakehouse Sync ADLS",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "userProperties": [],
+                            "typeProperties": {
+                                "variableName": "DatabricksOutputArray",
+                                "value": {
+                                    "value": "@activity('Spark - Synapse Lakehouse Sync ADLS').Output.runOutput",
+                                    "type": "Expression"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "Set Runtime Variables",
+                "type": "SetVariable",
+                "dependsOn": [],
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "PipelineValues",
+                    "value": {
+                        "value": "@array(json(concat('{\n\"PipelineRunId\": \"', pipeline().RunId ,'\"'\n,',\"PipelineStartDate\": \"', formatDateTime(convertFromUtc(pipeline().TriggerTime, 'Eastern Standard Time'), 'yyyyMMdd'), '\"'\n,',\"PipelineStartDateTime\": \"', formatDateTime(convertFromUtc(pipeline().TriggerTime, 'Eastern Standard Time'), 'yyyy-MM-dd HH:mm:ss'), '\"'\n,'}')))",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "ForEach - Pool Schema",
+                "type": "ForEach",
+                "dependsOn": [
+                    {
+                        "activity": "Filter - Table Not Exists Full",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@activity('Filter - Table Not Exists Full').output.value",
+                        "type": "Expression"
+                    },
+                    "activities": [
+                        {
+                            "name": "Create Schema if not exists",
+                            "type": "Lookup",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "source": {
+                                    "type": "SqlDWSource",
+                                    "sqlReaderQuery": {
+                                        "value": "@CONCAT('EXECUTE AS user = ''Userstaticrc10'' \nIF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE [name] = ''', item().DatabaseName, ''') EXEC(''CREATE SCHEMA ', item().DatabaseName, ''');SELECT 1 AS a')",
+                                        "type": "Expression"
+                                    },
+                                    "queryTimeout": "02:00:00",
+                                    "partitionOption": "None"
+                                },
+                                "dataset": {
+                                    "referenceName": "DS_Synapse_Managed_Identity",
+                                    "type": "DatasetReference",
+                                    "parameters": {
+                                        "ServerName": {
+                                            "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+                                            "type": "Expression"
+                                        },
+                                        "DatabaseName": {
+                                            "value": "@item().PoolName",
+                                            "type": "Expression"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "Filter - Table Exists - Incremental",
+                "type": "Filter",
+                "dependsOn": [
+                    {
+                        "activity": "ForEach - Pool Schema Table",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@variables('PoolSchemaTableArray')",
+                        "type": "Expression"
+                    },
+                    "condition": {
+                        "value": "@equals(item().ExistsFlagSynapse, 'True')",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "Filter - Table Not Exists Full",
+                "type": "Filter",
+                "dependsOn": [
+                    {
+                        "activity": "ForEach - Pool Schema Table",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@variables('PoolSchemaTableArray')",
+                        "type": "Expression"
+                    },
+                    "condition": {
+                        "value": "@equals(item().ExistsFlagSynapse, 'False')",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "ForEach - Pool Schema Table",
+                "type": "ForEach",
+                "dependsOn": [
+                    {
+                        "activity": "Lookup - Sync Pools",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Set Runtime Variables",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@activity('Lookup - Sync Pools').output.value",
+                        "type": "Expression"
+                    },
+                    "activities": [
+                        {
+                            "name": "Lookup - Check if table exists",
+                            "type": "Lookup",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "source": {
+                                    "type": "SqlDWSource",
+                                    "sqlReaderQuery": {
+                                        "value": "@concat('SELECT COALESCE((SELECT ''True'' FROM sys.tables WHERE SCHEMA_NAME(schema_id) = ''', item().DatabaseName, ''' AND [name] = ''', item().TableName, '''), ''False'') AS ExistsFlagSynapse\n\t\t,''', item().PoolName, ''' AS PoolName\n\t\t,''', item().DatabaseName, ''' AS DatabaseName\n\t\t,''', item().TableName, ''' AS TableName\n\t\t,''', item().KeyColumns, ''' AS KeyColumns\n\t\t,''', item().FolderPathFull, ''' AS FolderPathFull\n\t\t,''', item().ChangesFolderPathFull, ''' AS ChangesFolderPathFull'\n)",
+                                        "type": "Expression"
+                                    },
+                                    "queryTimeout": "02:00:00",
+                                    "partitionOption": "None"
+                                },
+                                "dataset": {
+                                    "referenceName": "DS_Synapse_Managed_Identity",
+                                    "type": "DatasetReference",
+                                    "parameters": {
+                                        "ServerName": {
+                                            "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+                                            "type": "Expression"
+                                        },
+                                        "DatabaseName": {
+                                            "value": "@item().PoolName",
+                                            "type": "Expression"
+                                        }
+                                    }
+                                },
+                                "firstRowOnly": true
+                            }
+                        },
+                        {
+                            "name": "Append variable - PoolSchemaTableArray",
+                            "type": "AppendVariable",
+                            "dependsOn": [
+                                {
+                                    "activity": "Lookup - Check if table exists",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "userProperties": [],
+                            "typeProperties": {
+                                "variableName": "PoolSchemaTableArray",
+                                "value": {
+                                    "value": "@activity('Lookup - Check if table exists').output.firstRow",
+                                    "type": "Expression"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "ForEach - Create and Load the Synapse Table",
+                "type": "ForEach",
+                "dependsOn": [
+                    {
+                        "activity": "ForEach - Lakehouse Table",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Create Log Tables If Not Exists",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@variables('DatabricksOutputArray')",
+                        "type": "Expression"
+                    },
+                    "isSequential": false,
+                    "activities": [
+                        {
+                            "name": "If Condition - Changes Detected",
+                            "type": "IfCondition",
+                            "dependsOn": [],
+                            "userProperties": [],
+                            "typeProperties": {
+                                "expression": {
+                                    "value": "@not(empty(item().ChangeTypes))",
+                                    "type": "Expression"
+                                },
+                                "ifTrueActivities": [
+                                    {
+                                        "name": "Execute - pl_SynapseTableLoad",
+                                        "type": "ExecutePipeline",
+                                        "dependsOn": [],
+                                        "userProperties": [],
+                                        "typeProperties": {
+                                            "pipeline": {
+                                                "referenceName": "SynapseLakehouseSyncTableLoad",
+                                                "type": "PipelineReference"
+                                            },
+                                            "waitOnCompletion": true,
+                                            "parameters": {
+                                                "SynapseSync_https": {
+                                                    "value": "@item().SynapseSync_https",
+                                                    "type": "Expression"
+                                                },
+                                                "TableName": {
+                                                    "value": "@item().TableName",
+                                                    "type": "Expression"
+                                                },
+                                                "DatabaseName": {
+                                                    "value": "@item().DatabaseName",
+                                                    "type": "Expression"
+                                                },
+                                                "PoolName": {
+                                                    "value": "@item().PoolName",
+                                                    "type": "Expression"
+                                                },
+                                                "PipelineValue": {
+                                                    "value": "@variables('PipelineValues')",
+                                                    "type": "Expression"
+                                                },
+                                                "ChangeTypesArray": {
+                                                    "value": "@item().ChangeTypes",
+                                                    "type": "Expression"
+                                                },
+                                                "DatabricksOutput": {
+                                                    "value": "@item()",
+                                                    "type": "Expression"
+                                                },
+                                                "DropTableFlag": {
+                                                    "value": "@variables('DropTableFlag')",
+                                                    "type": "Expression"
+                                                },
+                                                "KeyColumns": {
+                                                    "value": "@item().KeyColumns",
+                                                    "type": "Expression"
+                                                }
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "ForEach - Change Tracking Table",
+                "type": "ForEach",
+                "dependsOn": [
+                    {
+                        "activity": "Lookup - Get Distinct SynapseLakehouseTracking Tables",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@activity('Lookup - Get Distinct SynapseLakehouseTracking Tables').output.value",
+                        "type": "Expression"
+                    },
+                    "activities": [
+                        {
+                            "name": "Spark - Synapse Lakehouse Sync Tracking Table Optimize",
+                            "type": "DatabricksNotebook",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "notebookPath": "/Synapse Lakehouse Sync/Synapse Lakehouse Sync Tracking Table Optimize",
+                                "baseParameters": {
+                                    "ChangesFolderPathFull": {
+                                        "value": "@item().ChangesFolderPathFull",
+                                        "type": "Expression"
+                                    },
+                                    "PoolName": {
+                                        "value": "@item().PoolName",
+                                        "type": "Expression"
+                                    }
+                                }
+                            },
+                            "linkedServiceName": {
+                                "referenceName": "LS_AzureDatabricks_Managed_Identity",
+                                "type": "LinkedServiceReference"
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "Lookup - Get Distinct SynapseLakehouseTracking Tables",
+                "type": "Lookup",
+                "dependsOn": [
+                    {
+                        "activity": "ForEach - Create and Load the Synapse Table",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlDWSource",
+                        "sqlReaderQuery": {
+                            "value": "@concat('DECLARE @json NVARCHAR(MAX)  = '''\n, activity('Lookup - Sync Pools').output.value\n, ''' SELECT DISTINCT PoolName, ChangesFolderPathFull\nFROM OPENJSON(@json)\nWITH\n(\n\tPoolName VARCHAR(1000) ''$.PoolName''\n\t,DatabaseName VARCHAR(1000) ''$.DatabaseName''\n\t,TableName VARCHAR(1000) ''$.TableName''\n\t,FolderPathFull VARCHAR(1000) ''$.FolderPathFull''\n\t,ChangesFolderPathFull VARCHAR(1000) ''$.ChangesFolderPathFull''\n) AS a'\n)",
+                            "type": "Expression"
+                        },
+                        "queryTimeout": "02:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Synapse_Managed_Identity",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "ServerName": {
+                                "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+                                "type": "Expression"
+                            },
+                            "DatabaseName": "master"
+                        }
+                    },
+                    "firstRowOnly": false
+                }
+            },
+            {
+                "name": "Create Log Tables If Not Exists",
+                "type": "Lookup",
+                "dependsOn": [
+                    {
+                        "activity": "ForEach - Pool Schema",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Filter - Table Exists - Incremental",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlDWSource",
+                        "sqlReaderQuery": "IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE [name] = 'logging')\n    EXEC ('CREATE SCHEMA [logging]')\n;\n\nIF OBJECT_ID('logging.DataProfile', 'U') IS NULL\nCREATE TABLE logging.DataProfile\n(\n\tId INT IDENTITY(1,1) NOT NULL\n\t,PipelineRunId NVARCHAR(50) NOT NULL\n\t,PipelineStartDate INT NOT NULL\n\t,PipelineStartDateTime DATETIME2(0) NOT NULL\n    ,SchemaName NVARCHAR(100) NOT NULL\n    ,TableName NVARCHAR(100) NOT NULL\n\t,ColumnName NVARCHAR(100) NOT NULL\n\t,DataTypeName NVARCHAR(100) NOT NULL\n\t,DataTypeFull NVARCHAR(100) NOT NULL\n\t,CharacterLength INT NULL\n\t,PrecisionValue INT NULL\t\n\t,ScaleValue INT NULL\t\n\t,UniqueValueCount BIGINT NOT NULL\n\t,NullCount BIGINT NOT NULL\n\t,MinValue NVARCHAR(MAX)\n\t,MaxValue NVARCHAR(MAX)\n\t,MinLength INT\n\t,MaxLength INT\n\t,DataAverage NUMERIC(30,2)\n\t,DataStdevp FLOAT\n\t,TableRowCount BIGINT NOT NULL\n\t,TableDataSpaceGB NUMERIC(20,2) NOT NULL\n\t,WeightedScore NUMERIC(30,4)\n\t,SqlCommand NVARCHAR(MAX) NOT NULL\n    ,RowInsertDateTime DATETIME2(0) NOT NULL\n)\nWITH (DISTRIBUTION = ROUND_ROBIN, CLUSTERED INDEX(PipelineStartDateTime, PipelineRunId)\n)\n;\nSELECT 1 AS a",
+                        "queryTimeout": "24:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Synapse_Managed_Identity",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "ServerName": {
+                                "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+                                "type": "Expression"
+                            },
+                            "DatabaseName": {
+                                "value": "@variables('DatabaseName')",
+                                "type": "Expression"
+                            }
+                        }
+                    },
+                    "firstRowOnly": false
+                }
+            }
+        ],
+        "parameters": {
+            "StorageAccountNameMetadata": {
+                "type": "string",
+                "defaultValue": "https://synapsesyncjjb.dfs.core.windows.net/data/Synapse_Lakehouse_Sync_Metadata.csv"
+            }
+        },
+        "variables": {
+            "DatabricksOutputArray": {
+                "type": "Array"
+            },
+            "PipelineValues": {
+                "type": "Array"
+            },
+            "PoolSchemaTableArray": {
+                "type": "Array"
+            },
+            "DropTableFlag": {
+                "type": "Boolean",
+                "defaultValue": true
+            },
+            "DatabaseName": {
+                "type": "String",
+                "defaultValue": "DataWarehouse"
+            }
+        },
+        "folder": {
+            "name": "Synapse Lakehouse Sync"
+        },
+        "annotations": [],
+        "lastPublishTime": "2022-08-29T20:37:51Z"
+    },
+    "type": "Microsoft.Synapse/workspaces/pipelines"
+}
