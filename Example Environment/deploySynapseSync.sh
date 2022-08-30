@@ -36,8 +36,7 @@ checkBicepDeploymentState () {
     if [ "$bicepDeploymentCheck" = "Succeeded" ]; then
         echo "Succeeded"
     elif [ "$bicepDeploymentCheck" = "Failed" ] || [ "$bicepDeploymentCheck" = "Canceled" ]; then
-        echo "$(date) [ERROR] It looks like a Bicep deployment was attempted but failed." | tee -a $deploymentLogFile
-        exit 1;
+        echo "Failed"
     elif [[ $bicepDeploymentCheck == *"DeploymentNotFound"* ]]; then
         echo "DeploymentNotFound"
     fi
@@ -98,7 +97,10 @@ else
 fi
 
 # Make sure the Bicep deployment was successful 
-echo "${boldText}Bicep Deployment:${normalText}" $(checkBicepDeploymentState)
+if [ $(checkBicepDeploymentState) = "Failed" ]; then
+    echo "$(date) [ERROR] It looks like a Bicep deployment was attempted but failed." | tee -a $deploymentLogFile
+    exit 1;
+fi
 
 #
 # Part 2: Post-Deployment Configuration
@@ -169,7 +171,7 @@ az synapse dataset create --only-show-errors -o none --workspace-name ${synapseA
 # Create the Synapse Pipelines
 echo "Creating the Synapse Lakehouse Sync Pipelines..."
 echo "$(date) [INFO] Creating the Synapse Lakehouse Sync Pipelines..." >> $deploymentLogFile
-synapsePipelines=("SynapseLakehouseSyncTableLoad", "SynapseLakehouseSync", "SynapseLakehouseSync_Tutorial")
+synapsePipelines=("SynapseLakehouseSyncTableLoad" "SynapseLakehouseSync" "SynapseLakehouseSync_Tutorial")
 for synapsePipelineName in ${synapsePipelines[@]}; do
     cp "../Azure Synapse Lakehouse Sync/Synapse/Pipelines/$synapsePipelineName.json" "../Azure Synapse Lakehouse Sync/Synapse/Pipelines/$synapsePipelineName.json.tmp" 2>&1
     sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Pipelines/$synapsePipelineName.json.tmp"
@@ -216,7 +218,7 @@ createDatabricksKeyVaultScope=$(az rest --method post --url https://${databricks
 # maintain as much compatibility as possible for potential future updates.
 echo "Creating the Databricks Workspace Notebooks..."
 echo "$(date) [INFO] Creating the Databricks notebooks..." >> $deploymentLogFile
-databricksNotebooks=("Synapse Lakehouse Sync/Synapse Lakehouse Sync ADLS", "Synapse Lakehouse Sync/Synapse Lakehouse Sync Functions", "Synapse Lakehouse Sync/Synapse Lakehouse Sync Tracking Table Log Success", "Synapse Lakehouse Sync/Synapse Lakehouse Sync Tracking Table Optimize", "Synapse Lakehouse Sync Tutorial/Convert Parquet to Delta Tables - AdventureWorks", "Synapse Lakehouse Sync Tutorial/Simulate Data Changes - AdventureWorks")
+databricksNotebooks=("Synapse Lakehouse Sync/Synapse Lakehouse Sync ADLS" "Synapse Lakehouse Sync/Synapse Lakehouse Sync Functions" "Synapse Lakehouse Sync/Synapse Lakehouse Sync Tracking Table Log Success" "Synapse Lakehouse Sync/Synapse Lakehouse Sync Tracking Table Optimize" "Synapse Lakehouse Sync Tutorial/Convert Parquet to Delta Tables - AdventureWorks" "Synapse Lakehouse Sync Tutorial/Simulate Data Changes - AdventureWorks")
 for databricksNotebookName in ${databricksNotebooks[@]}; do
     databricksNotebookBase64=$(base64 -w 0 "../Azure Synapse Lakehouse Sync/Databricks/$databricksNotebookName.dbc" 2>&1 | sed 's/[[:space:]]*//g')
     echo "{\"path\":\"/$databricksNotebookName\",\"content\":\"$databricksNotebookBase64\", \"format\": \"DBC\" }" > "../Azure Synapse Lakehouse Sync/Databricks/$databricksNotebookName.json.tmp"
