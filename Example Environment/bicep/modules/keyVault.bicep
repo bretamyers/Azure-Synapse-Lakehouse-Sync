@@ -22,7 +22,6 @@ resource synapseStorageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' ex
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: 'synapsesync${resourceSuffix}'
   location: azureRegion
-
   properties: {
     enableSoftDelete: true
     softDeleteRetentionInDays: 90
