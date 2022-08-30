@@ -151,52 +151,47 @@ echo "Enabling the Synapse Dedicated SQL Query Store..."
 echo "$(date) [INFO] Enabling the Synapse Dedicated SQL Query Store..." >> $deploymentLogFile
 sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseSQLAdministratorLoginPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -Q "ALTER DATABASE ${synapseAnalyticsSQLPoolName} SET QUERY_STORE = ON;"
 
-# Create the Resource Class Users for the Parquet Auto Loader
+# Create the Resource Class Users for the Auto Loader
 echo "Creating the Synapse Dedicated SQL Resource Class Users..."
 echo "$(date) [INFO] Creating the Synapse Dedicated SQL Resource Class Users..." >> $deploymentLogFile
-sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseSQLAdministratorLoginPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -i "../Azure Synapse Lakehouse Sync/Synapse/Create_Resource_Class_Users.sql"
+sqlcmd -U ${synapseAnalyticsSQLAdmin} -P ${synapseSQLAdministratorLoginPassword} -S tcp:${synapseAnalyticsWorkspaceName}.sql.azuresynapse.net -d ${synapseAnalyticsSQLPoolName} -I -i "../Azure Synapse Lakehouse Sync/Synapse/Queries/Create_Resource_Class_Users.sql"
 
-# Create the LS_Synapse_Managed_Identity Linked Service. This is primarily used for the Auto Loader pipeline.
+# Create the LS_Synapse_Managed_Identity Linked Service.
 echo "Creating the Synapse Workspace Linked Service..."
 echo "$(date) [INFO] Creating the Synapse Workspace Linked Service..." >> $deploymentLogFile
 az synapse linked-service create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name LS_Synapse_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse/LS_Synapse_Managed_Identity.json"
 
-# Create the DS_Synapse_Managed_Identity Dataset. This is primarily used for the Auto Loader pipeline.
+# Create the DS_Synapse_Managed_Identity Dataset.
 echo "Creating the Synapse Workspace Dataset..."
 echo "$(date) [INFO] Creating the Synapse Workspace Dataset..." >> $deploymentLogFile
-az synapse dataset create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name DS_Synapse_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse/DS_Synapse_Managed_Identity.json"
+az synapse dataset create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name DS_Synapse_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse/Datasets/DS_Synapse_Managed_Identity.json"
 
+# Create the Synapse Pipelines
 echo "Creating the Synapse Lakehouse Sync Pipelines..."
 echo "$(date) [INFO] Creating the Synapse Lakehouse Sync Pipelines..." >> $deploymentLogFile
-
-# Create the 01 - SynapseLakehouseSyncTableLoad Pipeline in the Synapse Analytics Workspace
-az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "SynapseLakehouseSyncTableLoad" --file @"../Azure Synapse Lakehouse Sync/Synapse/SynapseLakehouseSyncTableLoad.json" >> $deploymentLogFile 2>&1
-
-# Create the 02 - SynapseLakehouseSync Pipeline in the Synapse Analytics Workspace
-cp "../Azure Synapse Lakehouse Sync/Synapse/02 - SynapseLakehouseSync.json.tmpl" "../Azure Synapse Lakehouse Sync/Synapse/02 - SynapseLakehouseSync.json" 2>&1
-sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/02 - SynapseLakehouseSync.json"
-sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" "../Azure Synapse Lakehouse Sync/Synapse/02 - SynapseLakehouseSync.json"
-az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "SynapseLakehouseSync" --file @"../Azure Synapse Lakehouse Sync/Synapse/02 - SynapseLakehouseSync.json" >> $deploymentLogFile 2>&1
-
-# Create the 03 - SynapseLakehouseSync_Tutorial Pipeline in the Synapse Analytics Workspace
-cp "../Azure Synapse Lakehouse Sync/Synapse/03 - SynapseLakehouseSync_Tutorial.json.tmpl" "../Azure Synapse Lakehouse Sync/Synapse/03 - SynapseLakehouseSync_Tutorial.json" 2>&1
-sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/03 - SynapseLakehouseSync_Tutorial.json"
-sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" "../Azure Synapse Lakehouse Sync/Synapse/03 - SynapseLakehouseSync_Tutorial.json"
-az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "SynapseLakehouseSync_Tutorial" --file @"../Azure Synapse Lakehouse Sync/Synapse/03 - SynapseLakehouseSync_Tutorial.json" >> $deploymentLogFile 2>&1
+synapsePipelines=("SynapseLakehouseSyncTableLoad", "SynapseLakehouseSync", "SynapseLakehouseSync_Tutorial")
+for synapsePipelineName in ${synapsePipelines[@]}; do
+    cp "../Azure Synapse Lakehouse Sync/Synapse/Pipelines/$synapsePipelineName.json" "../Azure Synapse Lakehouse Sync/Synapse/Pipelines/$synapsePipelineName.json.tmp" 2>&1
+    sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Pipelines/$synapsePipelineName.json.tmp"
+    sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Pipelines/$synapsePipelineName.json.tmp"
+    az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "$synapsePipelineName" --file @"../Azure Synapse Lakehouse Sync/Synapse/Pipelines/$synapsePipelineName.json.tmp" >> $deploymentLogFile 2>&1
+    rm "../Azure Synapse Lakehouse Sync/Synapse/Pipelines/$synapsePipelineName.json.tmp"
+done
 
 # Generate a SAS for the data lake so we can upload some files
 tomorrowsDate=$(date --date="tomorrow" +%Y-%m-%d)
 destinationStorageSAS=$(az storage container generate-sas --account-name ${datalakeName} --name data --permissions rwal --expiry ${tomorrowsDate} --only-show-errors --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 sampleDataStorageSAS="?sv=2021-06-08&st=2022-08-01T04%3A00%3A00Z&se=2023-08-01T04%3A00%3A00Z&sr=c&sp=rl&sig=DjC4dPo5AKYkNFplik2v6sH%2Fjhl2k1WTzna%2F1eV%2BFv0%3D"
 
-# Copy sample data for the Parquet Auto Loader pipeline
+# Copy sample data
 echo "Copying the sample data..."
 echo "$(date) [INFO] Copying the sample data..." >> $deploymentLogFile
-az storage copy -s 'https://synapseanalyticspocdata.blob.core.windows.net/sample/AdventureWorks/'$sampleDataStorageSAS -d 'https://'$datalakeName'.blob.core.windows.net/data/Sample?'$destinationStorageSAS --recursive >> $deploymentLogFile 2>&1
+az storage copy -s 'https://synapseanalyticspocdata.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_changes/'$sampleDataStorageSAS -d 'https://'$datalakeName'.blob.core.windows.net/data/Sample?'$destinationStorageSAS --recursive >> $deploymentLogFile 2>&1
+az storage copy -s 'https://synapseanalyticspocdata.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_parquet/'$sampleDataStorageSAS -d 'https://'$datalakeName'.blob.core.windows.net/data/Sample?'$destinationStorageSAS --recursive >> $deploymentLogFile 2>&1
 
-# Update the Parquet Auto Loader Metadata file template with the correct storage account and then upload it
-sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader_Metadata.csv"
-az storage copy -s '../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader_Metadata.csv' -d 'https://'"${datalakeName}"'.blob.core.windows.net/data?'"${destinationStorageSAS}" >> $deploymentLogFile 2>&1
+# Update the Auto Loader Metadata file template with the correct storage account and then upload it
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+az storage copy -s '../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv' -d 'https://'"${datalakeName}"'.blob.core.windows.net/data?'"${destinationStorageSAS}" >> $deploymentLogFile 2>&1
 
 # Get the Databricks Workspace Azure AD accessToken for authentication
 echo "$(date) [INFO] Getting the Databricks Workspace Azure AD accessToken..." >> $deploymentLogFile
@@ -221,20 +216,24 @@ createDatabricksKeyVaultScope=$(az rest --method post --url https://${databricks
 # maintain as much compatibility as possible for potential future updates.
 echo "Creating the Databricks Workspace Notebooks..."
 echo "$(date) [INFO] Creating the Databricks notebooks..." >> $deploymentLogFile
-createDatabricksCDCNotebook=$(base64 -w 0 "../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.dbc" 2>&1 | sed 's/[[:space:]]*//g')
-echo "{\"path\":\"/Synapse Sync CDC\",\"content\":\"$createDatabricksCDCNotebook\", \"format\": \"DBC\" }" > "../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.json.tmp"
-createDatabricksCDCNotebook=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/workspace/import --body "@../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.json.tmp" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\",\"Content-Type\":\"application/json\"}" 2>&1 | tee -a $deploymentLogFile)
-rm "../Azure Synapse Lakehouse Sync/Databricks/Synapse Sync CDC.json.tmp"
+databricksNotebooks=("Synapse Lakehouse Sync/Synapse Lakehouse Sync ADLS", "Synapse Lakehouse Sync/Synapse Lakehouse Sync Functions", "Synapse Lakehouse Sync/Synapse Lakehouse Sync Tracking Table Log Success", "Synapse Lakehouse Sync/Synapse Lakehouse Sync Tracking Table Optimize", "Synapse Lakehouse Sync Tutorial/Convert Parquet to Delta Tables - AdventureWorks", "Synapse Lakehouse Sync Tutorial/Simulate Data Changes - AdventureWorks")
+for databricksNotebookName in ${databricksNotebooks[@]}; do
+    databricksNotebookBase64=$(base64 -w 0 "../Azure Synapse Lakehouse Sync/Databricks/$databricksNotebookName.dbc" 2>&1 | sed 's/[[:space:]]*//g')
+    echo "{\"path\":\"/$databricksNotebookName\",\"content\":\"$databricksNotebookBase64\", \"format\": \"DBC\" }" > "../Azure Synapse Lakehouse Sync/Databricks/$databricksNotebookName.json.tmp"
+    databricksNotebookCreate=$(az rest --method post --url https://${databricksWorkspaceUrl}/api/2.0/workspace/import --body "@../Azure Synapse Lakehouse Sync/Databricks/$databricksNotebookName.json.tmp" --headers "{\"Authorization\":\"Bearer $databricksAccessToken\",\"Content-Type\":\"application/json\"}" 2>&1 | tee -a $deploymentLogFile)
+    rm "../Azure Synapse Lakehouse Sync/Databricks/$databricksNotebookName.json.tmp"
+done
 
-# Create the LS_AzureDatabricks_Managed_Identity Linked Service.
+# Create the LS_AzureDatabricks_Managed_Identity Synapse Linked Service.
 echo "Creating the Databricks Workspace Linked Service..."
 echo "$(date) [INFO] Creating the Databricks Workspace Linked Service..." >> $deploymentLogFile
 #databricksClusterId=$(az rest --method get --url https://${databricksWorkspaceUrl}/api/2.0/clusters/list --headers "{\"Authorization\":\"Bearer $databricksAccessToken\"}" --query clusters[0].cluster_id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
-cp "../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json.tmpl" "../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json" 2>&1
-sed -i "s/REPLACE_DATABRICKS_WORKSPACE_URL/${databricksWorkspaceUrl}/g" "../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json"
-sed -i "s/REPLACE_DATABRICKS_WORKSPACE_ID/${databricksWorkspaceId}/g" "../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json"
-sed -i "s/REPLACE_DATABRICKS_CLUSTER_ID/${createDatabricksCluster}/g" "../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json"
-az synapse linked-service create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name LS_AzureDatabricks_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse/LS_AzureDatabricks_Managed_Identity.json"
+cp "../Azure Synapse Lakehouse Sync/Synapse/Linked Services/LS_AzureDatabricks_Managed_Identity.json" "../Azure Synapse Lakehouse Sync/Synapse/Linked Services/LS_AzureDatabricks_Managed_Identity.json.tmp" 2>&1
+sed -i "s/REPLACE_DATABRICKS_WORKSPACE_URL/${databricksWorkspaceUrl}/g" "../Azure Synapse Lakehouse Sync/Synapse/Linked Services/LS_AzureDatabricks_Managed_Identity.json.tmp"
+sed -i "s/REPLACE_DATABRICKS_WORKSPACE_ID/${databricksWorkspaceId}/g" "../Azure Synapse Lakehouse Sync/Synapse/Linked Services/LS_AzureDatabricks_Managed_Identity.json.tmp"
+sed -i "s/REPLACE_DATABRICKS_CLUSTER_ID/${createDatabricksCluster}/g" "../Azure Synapse Lakehouse Sync/Synapse/Linked Services/LS_AzureDatabricks_Managed_Identity.json.tmp"
+az synapse linked-service create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name LS_AzureDatabricks_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse/Linked Services/LS_AzureDatabricks_Managed_Identity.json.tmp"
+rm "../Azure Synapse Lakehouse Sync/Synapse/Linked Services/LS_AzureDatabricks_Managed_Identity.json.tmp"
 
 
 echo "Deployment Complete!"
