@@ -143,7 +143,7 @@
                                 "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
                                 "type": "Expression"
                             },
-                            "DatabaseName": "Datawarehouse"
+                            "DatabaseName": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
                         }
                     },
                     "firstRowOnly": false
@@ -171,7 +171,7 @@
                 "typeProperties": {
                     "source": {
                         "type": "SqlDWSource",
-                        "sqlReaderQuery": "SELECT FORMAT(COUNT(*), 'N0') AS RowCnt\nFROM OPENROWSET(\n    BULK 'https://synapsesyncjjb.dfs.core.windows.net/data/Sample/AdventureWorks_changes/DimCustomer_inserts/*',\n    FORMAT = 'PARQUET'\n) AS [result]",
+                        "sqlReaderQuery": "SELECT FORMAT(COUNT(*), 'N0') AS RowCnt\nFROM OPENROWSET(\n    BULK 'https://REPLACE_DATALAKE_NAME.dfs.core.windows.net/data/Sample/AdventureWorks_changes/DimCustomer_inserts/*',\n    FORMAT = 'PARQUET'\n) AS [result]",
                         "queryTimeout": "02:00:00",
                         "partitionOption": "None"
                     },
@@ -223,7 +223,7 @@
                                 "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
                                 "type": "Expression"
                             },
-                            "DatabaseName": "DataWarehouse"
+                            "DatabaseName": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
                         }
                     },
                     "firstRowOnly": false

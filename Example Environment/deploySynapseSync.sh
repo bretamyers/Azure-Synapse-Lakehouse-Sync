@@ -166,15 +166,23 @@ echo "Creating the Synapse Workspace Dataset..."
 echo "$(date) [INFO] Creating the Synapse Workspace Dataset..." >> $deploymentLogFile
 az synapse dataset create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name DS_Synapse_Managed_Identity --file @"../Azure Synapse Lakehouse Sync/Synapse/DS_Synapse_Managed_Identity.json"
 
-# Copy the Parquet Auto Loader Pipeline template and update the variables
-echo "Creating the Parquet Auto Loader Pipeline..."
-echo "$(date) [INFO] Creating the Parquet Auto Loader Pipeline..." >> $deploymentLogFile
-cp "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json.tmpl" "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json" 2>&1
-sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json"
-sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json"
+echo "Creating the Synapse Lakehouse Sync Pipelines..."
+echo "$(date) [INFO] Creating the Synapse Lakehouse Sync Pipelines..." >> $deploymentLogFile
 
-# Create the Parquet Auto Loader Pipeline in the Synapse Analytics Workspace
-az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "Parquet Auto Loader" --file @"../Azure Synapse Lakehouse Sync/Synapse/Parquet_Auto_Loader.json" >> $deploymentLogFile 2>&1
+# Create the 01 - SynapseLakehouseSyncTableLoad Pipeline in the Synapse Analytics Workspace
+az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "SynapseLakehouseSyncTableLoad" --file @"../Azure Synapse Lakehouse Sync/Synapse/SynapseLakehouseSyncTableLoad.json" >> $deploymentLogFile 2>&1
+
+# Create the 02 - SynapseLakehouseSync Pipeline in the Synapse Analytics Workspace
+cp "../Azure Synapse Lakehouse Sync/Synapse/02 - SynapseLakehouseSync.json.tmpl" "../Azure Synapse Lakehouse Sync/Synapse/02 - SynapseLakehouseSync.json" 2>&1
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/02 - SynapseLakehouseSync.json"
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" "../Azure Synapse Lakehouse Sync/Synapse/02 - SynapseLakehouseSync.json"
+az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "SynapseLakehouseSync" --file @"../Azure Synapse Lakehouse Sync/Synapse/02 - SynapseLakehouseSync.json" >> $deploymentLogFile 2>&1
+
+# Create the 03 - SynapseLakehouseSync_Tutorial Pipeline in the Synapse Analytics Workspace
+cp "../Azure Synapse Lakehouse Sync/Synapse/03 - SynapseLakehouseSync_Tutorial.json.tmpl" "../Azure Synapse Lakehouse Sync/Synapse/03 - SynapseLakehouseSync_Tutorial.json" 2>&1
+sed -i "s/REPLACE_DATALAKE_NAME/${datalakeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/03 - SynapseLakehouseSync_Tutorial.json"
+sed -i "s/REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME/${synapseAnalyticsSQLPoolName}/g" "../Azure Synapse Lakehouse Sync/Synapse/03 - SynapseLakehouseSync_Tutorial.json"
+az synapse pipeline create --only-show-errors -o none --workspace-name ${synapseAnalyticsWorkspaceName} --name "SynapseLakehouseSync_Tutorial" --file @"../Azure Synapse Lakehouse Sync/Synapse/03 - SynapseLakehouseSync_Tutorial.json" >> $deploymentLogFile 2>&1
 
 # Generate a SAS for the data lake so we can upload some files
 tomorrowsDate=$(date --date="tomorrow" +%Y-%m-%d)
