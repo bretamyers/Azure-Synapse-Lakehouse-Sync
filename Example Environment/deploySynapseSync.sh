@@ -87,16 +87,16 @@ userOutput "INFO" "Azure AD User Object Id: ${accountDetails[azureUsernameObject
 # Update a Bicep variable if it isn't configured by the user. This allows Bicep to add the user Object Id
 # to the Storage Blob Data Contributor role on the Azure Data Lake Storage Gen2 account, which allows Synapse
 # Serverless SQL to query files on storage.
-sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${accountDetails[azureUsernameObjectId]}/g" Bicep/main.parameters.json 2>&1
+sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${accountDetails[azureUsernameObjectId]}/g" bicep/main.parameters.json 2>&1
 
 # Check to see if the Bicep deployment was already completed manually. If not, lets do it.
 if [ $(checkBicepDeploymentState) = "DeploymentNotFound" ]; then
     # Get the Azure Region from the Bicep main.parameters.json
-    bicepAzureRegion=$(jq -r .parameters.azureRegion.value Bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
+    bicepAzureRegion=$(jq -r .parameters.azureRegion.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
     # Bicep deployment via Azure CLI
     userOutput "INFO" "Deploying environment via Bicep. This will take several minutes..."
-    bicepDeploy=$(az deployment sub create --template-file Bicep/main.bicep --parameters Bicep/main.parameters.json --name ${bicepDeploymentName} --location ${bicepAzureRegion} 2>&1 | tee -a $deploymentLogFile)
+    bicepDeploy=$(az deployment sub create --template-file bicep/main.bicep --parameters bicep/main.parameters.json --name ${bicepDeploymentName} --location ${bicepAzureRegion} 2>&1 | tee -a $deploymentLogFile)
 else
     userOutput "INFO" "It appears the Bicep deployment was done manually. Skipping..."
 fi
@@ -126,7 +126,7 @@ for value in "${bicepDeploymentDetails[@]}"; do
 done
 
 # Get the Synapse AQL Administrator Login Password from the Bicep main.parameters.json
-bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]=$(jq -r .parameters.synapseSQLAdministratorLoginPassword.value Bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
+bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]=$(jq -r .parameters.synapseSQLAdministratorLoginPassword.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
 # Get the Databricks Workspace Azure AD accessToken for authentication
 databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output tsv --query accessToken 2>&1 | sed 's/[[:space:]]*//g')
