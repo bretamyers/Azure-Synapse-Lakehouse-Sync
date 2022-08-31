@@ -18,7 +18,7 @@
       "value": "Pass@word123" 
     },
     "synapseAzureADAdminObjectId": {
-      "value": "714ce9f9-6352-4ec4-a3d7-6630c210c3b6"
+      "value": "REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID"
     }
   }
 }
