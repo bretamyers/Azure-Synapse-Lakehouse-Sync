@@ -118,6 +118,13 @@ for bicepVariable in "${bicepOutputVariables[@]}"; do
     bicepDeploymentDetails[${bicepVariable}]=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.${bicepVariable}.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 done
 
+for value in "${bicepDeploymentDetails[@]}"; do 
+    if [ "${value}" = "" ]; then
+        userOutput "ERROR" "Unable to get Bicep deployment details."
+        exit 1;
+    fi
+done
+
 # Get the Synapse AQL Administrator Login Password from the Bicep main.parameters.json
 bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]=$(jq -r .parameters.synapseSQLAdministratorLoginPassword.value Bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
