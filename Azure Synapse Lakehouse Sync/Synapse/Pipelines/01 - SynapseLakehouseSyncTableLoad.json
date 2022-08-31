@@ -1337,6 +1337,10 @@
                         "ChangesFolderPathFull": {
                             "value": "@pipeline().parameters.DatabricksOutput.SynapseSync_abfss",
                             "type": "Expression"
+                        },
+                        "SynapseWorkspaceName": {
+                            "value": "@pipeline().DataFactory",
+                            "type": "Expression"
                         }
                     }
                 },
@@ -1430,7 +1434,7 @@
             "name": "Synapse Lakehouse Sync"
         },
         "annotations": [],
-        "lastPublishTime": "2022-08-29T18:11:12Z"
+        "lastPublishTime": "2022-08-31T20:00:13Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }

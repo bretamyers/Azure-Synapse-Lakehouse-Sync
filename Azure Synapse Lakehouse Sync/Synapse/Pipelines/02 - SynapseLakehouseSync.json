@@ -18,7 +18,7 @@
                     "source": {
                         "type": "SqlDWSource",
                         "sqlReaderQuery": {
-                            "value": "@concat('SELECT *\nFROM OPENROWSET(\n        BULK ''', pipeline().parameters.StorageAccountNameMetadata, ''',\n        FORMAT = ''CSV'',\n        PARSER_VERSION = ''2.0'', \n        HEADER_ROW = TRUE\n    ) AS [result]')",
+                            "value": "@concat('SELECT SELECT PoolName, DatabaseName, TableName, KeyColumns, DataFolderPathFull AS FolderPathFull, SyncFolderPathFull AS ChangeFolderPathFull\nFROM OPENROWSET(\n        BULK ''', pipeline().parameters.StorageAccountNameMetadata, ''',\n        FORMAT = ''CSV'',\n        PARSER_VERSION = ''2.0'', \n        HEADER_ROW = TRUE\n    ) AS [result]')",
                             "type": "Expression"
                         },
                         "queryTimeout": "02:00:00",
@@ -50,6 +50,12 @@
                     },
                     {
                         "activity": "Filter - Table Exists - Incremental",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "ForEach - Create Sync Tracking Tables",
                         "dependencyConditions": [
                             "Succeeded"
                         ]
@@ -103,6 +109,10 @@
                                     },
                                     "KeyColumns": {
                                         "value": "@item().KeyColumns",
+                                        "type": "Expression"
+                                    },
+                                    "SynapseWorkspaceName": {
+                                        "value": "@pipeline().DataFactory",
                                         "type": "Expression"
                                     }
                                 }
@@ -472,6 +482,10 @@
                                     "PoolName": {
                                         "value": "@item().PoolName",
                                         "type": "Expression"
+                                    },
+                                    "SynapseWorkspaceName": {
+                                        "value": "@pipeline().DataFactory",
+                                        "type": "Expression"
                                     }
                                 }
                             },
@@ -574,12 +588,116 @@
                     },
                     "firstRowOnly": false
                 }
+            },
+            {
+                "name": "ForEach - Create Sync Tracking Tables",
+                "type": "ForEach",
+                "dependsOn": [
+                    {
+                        "activity": "ForEach - Pool Schema Table",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Lookup - Distinct Pools",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "items": {
+                        "value": "@activity('Lookup - Sync Pools').output.value",
+                        "type": "Expression"
+                    },
+                    "activities": [
+                        {
+                            "name": "Spark - Synapse Lakehouse Sync Create Tracking Table",
+                            "type": "DatabricksNotebook",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "notebookPath": "/Synapse Lakehouse Sync/Synapse Lakehouse Sync Create Tracking Table",
+                                "baseParameters": {
+                                    "ChangesFolderPathFull": {
+                                        "value": "@item().ChangesFolderPathFull",
+                                        "type": "Expression"
+                                    },
+                                    "PoolName": {
+                                        "value": "@item().PoolName",
+                                        "type": "Expression"
+                                    },
+                                    "SynapseWorkspaceName": {
+                                        "value": "@pipeline().DataFactory",
+                                        "type": "Expression"
+                                    }
+                                }
+                            },
+                            "linkedServiceName": {
+                                "referenceName": "LS_AzureDatabricks_Managed_Identity",
+                                "type": "LinkedServiceReference"
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "Lookup - Distinct Pools",
+                "type": "Lookup",
+                "dependsOn": [
+                    {
+                        "activity": "ForEach - Pool Schema Table",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlDWSource",
+                        "sqlReaderQuery": {
+                            "value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', variables('PoolSchemaTableArray'), '''\n\nSELECT DISTINCT PoolName\nFROM OPENJSON(@sql)\nWITH\n(\n\tExistsFlagSynapse VARCHAR(10)\n\t,PoolName NVARCHAR(1000)\n\t,DatabaseName NVARCHAR(1000)\n\t,KeyColumns NVARCHAR(1000)\n\t,FolderPathFull NVARCHAR(1000)\n\t,ChangesFolderPathFull NVARCHAR(1000)\n)\n')",
+                            "type": "Expression"
+                        },
+                        "queryTimeout": "02:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Synapse_Managed_Identity",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "ServerName": {
+                                "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+                                "type": "Expression"
+                            },
+                            "DatabaseName": "master"
+                        }
+                    },
+                    "firstRowOnly": false
+                }
             }
         ],
         "parameters": {
             "StorageAccountNameMetadata": {
                 "type": "string",
-                "defaultValue": "https://REPLACE_DATALAKE_NAME.dfs.core.windows.net/data/Synapse_Lakehouse_Sync_Metadata.csv"
+                "defaultValue": "https://synapsesynccav.dfs.core.windows.net/data/Synapse_Lakehouse_Sync_Metadata.csv"
             }
         },
         "variables": {
@@ -598,14 +716,14 @@
             },
             "DatabaseName": {
                 "type": "String",
-                "defaultValue": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
+                "defaultValue": "DataWarehouse"
             }
         },
         "folder": {
             "name": "Synapse Lakehouse Sync"
         },
         "annotations": [],
-        "lastPublishTime": "2022-08-29T20:37:51Z"
+        "lastPublishTime": "2022-08-31T20:00:24Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }

@@ -21,7 +21,11 @@
                             "value": "@concat('abfss://', 'data', '@', pipeline().DataFactory, '.dfs.core.windows.net/Sample/')",
                             "type": "Expression"
                         },
-                        "DatabaseName": "AdventureWorks"
+                        "DatabaseName": "AdventureWorks",
+                        "SynapseWorkspaceName": {
+                            "value": "@pipeline().DataFactory",
+                            "type": "Expression"
+                        }
                     }
                 },
                 "linkedServiceName": {
@@ -81,7 +85,11 @@
                             "value": "@concat('abfss://', 'data', '@', pipeline().DataFactory, '.dfs.core.windows.net/Sample/')",
                             "type": "Expression"
                         },
-                        "DatabaseName": "AdventureWorks"
+                        "DatabaseName": "AdventureWorks",
+                        "SynapseWorkspaceName": {
+                            "value": "@pipeline().DataFactory",
+                            "type": "Expression"
+                        }
                     }
                 },
                 "linkedServiceName": {
@@ -143,7 +151,7 @@
                                 "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
                                 "type": "Expression"
                             },
-                            "DatabaseName": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
+                            "DatabaseName": "DataWarehouse"
                         }
                     },
                     "firstRowOnly": false
@@ -171,7 +179,7 @@
                 "typeProperties": {
                     "source": {
                         "type": "SqlDWSource",
-                        "sqlReaderQuery": "SELECT FORMAT(COUNT(*), 'N0') AS RowCnt\nFROM OPENROWSET(\n    BULK 'https://REPLACE_DATALAKE_NAME.dfs.core.windows.net/data/Sample/AdventureWorks_changes/DimCustomer_inserts/*',\n    FORMAT = 'PARQUET'\n) AS [result]",
+                        "sqlReaderQuery": "SELECT FORMAT(COUNT(*), 'N0') AS RowCnt\nFROM OPENROWSET(\n    BULK 'https://synapsesynccav.dfs.core.windows.net/data/Sample/AdventureWorks_changes/DimCustomer_inserts/*',\n    FORMAT = 'PARQUET'\n) AS [result]",
                         "queryTimeout": "02:00:00",
                         "partitionOption": "None"
                     },
@@ -223,7 +231,7 @@
                                 "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
                                 "type": "Expression"
                             },
-                            "DatabaseName": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
+                            "DatabaseName": "DataWarehouse"
                         }
                     },
                     "firstRowOnly": false
@@ -274,7 +282,7 @@
             "name": "Synapse Lakehouse Sync"
         },
         "annotations": [],
-        "lastPublishTime": "2022-08-29T20:38:03Z"
+        "lastPublishTime": "2022-08-31T20:00:38Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }
