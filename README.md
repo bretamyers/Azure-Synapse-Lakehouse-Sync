@@ -14,11 +14,11 @@
 - ChangesFolderPathFull - The full path for the ADLS location where the change feed files will land.
 
 #### Example:
-	<br>PoolName = myPool
-	<br>DatabaseName  = schemaA
-	<br>TableName = tableA
-	<br>FolderPathFull = abfss://goldzone@myadlsstorage.dfs.core.windows.net/myDB/schemaA/tableA
-	<br>ChangesFolderPathFull = abfss://synapselakehousesync@myadlsstorage.dfs.core.windows.net/
+- PoolName = myPool 
+- DatabaseName  = schemaA
+- TableName = tableA
+- FolderPathFull = abfss://goldzone@myadlsstorage.dfs.core.windows.net/myDB/schemaA/tableA
+- ChangesFolderPathFull = abfss://synapselakehousesync@myadlsstorage.dfs.core.windows.net/
 	
 Note - in the above example, the change feed files will be stored here abfss://synapselakehousesync@myadlsstorage.dfs.core.windows.net/myPool_SynapseLakehouseSync/schemaA/tableA/{change folders}
 	A separate folder location in delta format is created and used to track what data has been sync'd to Synapse. abfss://synapselakehousesync@myadlsstorage.dfs.core.windows.net/myPool_SynapseLakehouseSync/_SynapseLakehouseSyncTracker
