@@ -1,4 +1,4 @@
-﻿PoolName,DatabaseName,TableName,KeyColumns,FolderPathFull,ChangesFolderPathFull
+﻿PoolName,DatabaseName,TableName,KeyColumns,DataFolderPathFull,SyncFolderPathFull
 DataWarehouse,AdventureWorks,FactInternetSales,_Id,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/AdventureWorks/FactInternetSales/,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/
 DataWarehouse,AdventureWorks,FactResellerSales,"SalesOrderNumber,SalesOrderLineNumber",abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/AdventureWorks/FactResellerSales/,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/
 DataWarehouse,AdventureWorks,DimCustomer,_Id,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/AdventureWorks/DimCustomer/,abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net/Sample/
