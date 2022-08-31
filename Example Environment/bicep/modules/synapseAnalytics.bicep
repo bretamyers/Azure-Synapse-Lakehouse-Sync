@@ -36,7 +36,6 @@ resource synapseAnalyticsWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
     type: 'SystemAssigned'
   }
   properties: {
-    managedVirtualNetwork: 'default'
     defaultDataLakeStorage: {
       accountUrl: synapseStorageAccount.properties.primaryEndpoints.dfs
       filesystem: 'config'
