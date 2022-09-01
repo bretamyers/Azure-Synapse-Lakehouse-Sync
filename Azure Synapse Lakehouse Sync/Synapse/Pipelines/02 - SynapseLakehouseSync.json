@@ -697,7 +697,7 @@
         "parameters": {
             "StorageAccountNameMetadata": {
                 "type": "string",
-                "defaultValue": "https://synapsesynccav.dfs.core.windows.net/data/Synapse_Lakehouse_Sync_Metadata.csv"
+                "defaultValue": "https://REPLACE_DATALAKE_NAME.dfs.core.windows.net/data/Synapse_Lakehouse_Sync_Metadata.csv"
             }
         },
         "variables": {

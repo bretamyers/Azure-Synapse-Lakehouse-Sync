@@ -1353,7 +1353,7 @@
         "parameters": {
             "SynapseSync_https": {
                 "type": "string",
-                "defaultValue": "https://adlsbrmyers.dfs.core.windows.net/bronzezone/AdventureWorks_SynapseSync/"
+                "defaultValue": "https://REPLACE_DATALAKE_NAME.dfs.core.windows.net/"
             },
             "TableName": {
                 "type": "string",
@@ -1379,8 +1379,8 @@
             "DatabricksOutput": {
                 "type": "object",
                 "defaultValue": {
-                    "SynapseSync_abfss": "abfss://bronzezone@adlsbrmyers.dfs.core.windows.net",
-                    "SynapseSync_https": "https://adlsbrmyers.dfs.core.windows.net/bronzezone",
+                    "SynapseSync_abfss": "abfss://data@REPLACE_DATALAKE_NAME.dfs.core.windows.net",
+                    "SynapseSync_https": "https://REPLACE_DATALAKE_NAME.dfs.core.windows.net/data",
                     "PoolName": "TPCDSDW",
                     "DatabaseName": "AdventureWorks",
                     "TableName": "FactInternetSales",

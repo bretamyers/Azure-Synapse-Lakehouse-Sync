@@ -179,7 +179,7 @@
                 "typeProperties": {
                     "source": {
                         "type": "SqlDWSource",
-                        "sqlReaderQuery": "SELECT FORMAT(COUNT(*), 'N0') AS RowCnt\nFROM OPENROWSET(\n    BULK 'https://synapsesynccav.dfs.core.windows.net/data/Sample/AdventureWorks_changes/DimCustomer_inserts/*',\n    FORMAT = 'PARQUET'\n) AS [result]",
+                        "sqlReaderQuery": "SELECT FORMAT(COUNT(*), 'N0') AS RowCnt\nFROM OPENROWSET(\n    BULK 'https://REPLACE_DATALAKE_NAME.dfs.core.windows.net/data/Sample/AdventureWorks_changes/DimCustomer_inserts/*',\n    FORMAT = 'PARQUET'\n) AS [result]",
                         "queryTimeout": "02:00:00",
                         "partitionOption": "None"
                     },
