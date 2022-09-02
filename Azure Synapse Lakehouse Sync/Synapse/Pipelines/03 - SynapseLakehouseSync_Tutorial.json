@@ -34,7 +34,7 @@
                 }
             },
             {
-                "name": "Execute - Full Load - pl_SynapseLakehouseSync",
+                "name": "Execute - Full Load - SynapseLakehouseSync",
                 "type": "ExecutePipeline",
                 "dependsOn": [
                     {
@@ -58,13 +58,7 @@
                 "type": "DatabricksNotebook",
                 "dependsOn": [
                     {
-                        "activity": "Count Rows in Synapse - Initial Changes",
-                        "dependencyConditions": [
-                            "Succeeded"
-                        ]
-                    },
-                    {
-                        "activity": "Count Rows in Changes Folders - Initial Changes",
+                        "activity": "Execute - Full Load - SynapseLakehouseSync",
                         "dependencyConditions": [
                             "Succeeded"
                         ]
@@ -98,7 +92,7 @@
                 }
             },
             {
-                "name": "Execute - Changes - pl_SynapseLakehouseSync",
+                "name": "Execute - Changes - SynapseLakehouseSync",
                 "type": "ExecutePipeline",
                 "dependsOn": [
                     {
@@ -116,173 +110,13 @@
                     },
                     "waitOnCompletion": true
                 }
-            },
-            {
-                "name": "Count Rows in Synapse - Initial Changes",
-                "type": "Lookup",
-                "dependsOn": [
-                    {
-                        "activity": "Execute - Full Load - pl_SynapseLakehouseSync",
-                        "dependencyConditions": [
-                            "Succeeded"
-                        ]
-                    }
-                ],
-                "policy": {
-                    "timeout": "0.12:00:00",
-                    "retry": 0,
-                    "retryIntervalInSeconds": 30,
-                    "secureOutput": false,
-                    "secureInput": false
-                },
-                "userProperties": [],
-                "typeProperties": {
-                    "source": {
-                        "type": "SqlDWSource",
-                        "sqlReaderQuery": "SELECT 'AdventureWorks.DimCustomer' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.DimCustomer\nUNION SELECT 'AdventureWorks.DimDate' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.DimDate\nUNION SELECT 'AdventureWorks.DimProduct' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.DimProduct\nUNION SELECT 'AdventureWorks.DimPromotion' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.DimPromotion\nUNION SELECT 'AdventureWorks.FactInternetSales' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.FactInternetSales\nUNION SELECT 'AdventureWorks.FactResellerSales' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.FactResellerSales\nORDER BY RowCnt",
-                        "queryTimeout": "02:00:00",
-                        "partitionOption": "None"
-                    },
-                    "dataset": {
-                        "referenceName": "DS_Synapse_Managed_Identity",
-                        "type": "DatasetReference",
-                        "parameters": {
-                            "ServerName": {
-                                "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
-                                "type": "Expression"
-                            },
-                            "DatabaseName": "DataWarehouse"
-                        }
-                    },
-                    "firstRowOnly": false
-                }
-            },
-            {
-                "name": "Count Rows in Changes Folders - Initial Changes",
-                "type": "Lookup",
-                "dependsOn": [
-                    {
-                        "activity": "Execute - Full Load - pl_SynapseLakehouseSync",
-                        "dependencyConditions": [
-                            "Succeeded"
-                        ]
-                    }
-                ],
-                "policy": {
-                    "timeout": "0.12:00:00",
-                    "retry": 0,
-                    "retryIntervalInSeconds": 30,
-                    "secureOutput": false,
-                    "secureInput": false
-                },
-                "userProperties": [],
-                "typeProperties": {
-                    "source": {
-                        "type": "SqlDWSource",
-                        "sqlReaderQuery": "SELECT FORMAT(COUNT(*), 'N0') AS RowCnt\nFROM OPENROWSET(\n    BULK 'https://REPLACE_DATALAKE_NAME.dfs.core.windows.net/data/Sample/AdventureWorks_changes/DimCustomer_inserts/*',\n    FORMAT = 'PARQUET'\n) AS [result]",
-                        "queryTimeout": "02:00:00",
-                        "partitionOption": "None"
-                    },
-                    "dataset": {
-                        "referenceName": "DS_Synapse_Managed_Identity",
-                        "type": "DatasetReference",
-                        "parameters": {
-                            "ServerName": {
-                                "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
-                                "type": "Expression"
-                            },
-                            "DatabaseName": "master"
-                        }
-                    },
-                    "firstRowOnly": false
-                }
-            },
-            {
-                "name": "Count Rows in Changes Folders - After Changes",
-                "type": "Lookup",
-                "dependsOn": [
-                    {
-                        "activity": "Execute - Changes - pl_SynapseLakehouseSync",
-                        "dependencyConditions": [
-                            "Succeeded"
-                        ]
-                    }
-                ],
-                "policy": {
-                    "timeout": "0.12:00:00",
-                    "retry": 0,
-                    "retryIntervalInSeconds": 30,
-                    "secureOutput": false,
-                    "secureInput": false
-                },
-                "userProperties": [],
-                "typeProperties": {
-                    "source": {
-                        "type": "SqlDWSource",
-                        "sqlReaderQuery": "SELECT 'AdventureWorks.DimCustomer' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.DimCustomer\nUNION SELECT 'AdventureWorks.DimDate' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.DimDate\nUNION SELECT 'AdventureWorks.DimProduct' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.DimProduct\nUNION SELECT 'AdventureWorks.DimPromotion' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.DimPromotion\nUNION SELECT 'AdventureWorks.FactInternetSales' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.FactInternetSales\nUNION SELECT 'AdventureWorks.FactResellerSales' AS TableName, FORMAT(COUNT(*), 'N0') AS RowCnt FROM AdventureWorks.FactResellerSales\nORDER BY RowCnt",
-                        "queryTimeout": "02:00:00",
-                        "partitionOption": "None"
-                    },
-                    "dataset": {
-                        "referenceName": "DS_Synapse_Managed_Identity",
-                        "type": "DatasetReference",
-                        "parameters": {
-                            "ServerName": {
-                                "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
-                                "type": "Expression"
-                            },
-                            "DatabaseName": "DataWarehouse"
-                        }
-                    },
-                    "firstRowOnly": false
-                }
-            },
-            {
-                "name": "Count Rows in Synapse - After Changes",
-                "type": "Lookup",
-                "dependsOn": [
-                    {
-                        "activity": "Execute - Changes - pl_SynapseLakehouseSync",
-                        "dependencyConditions": [
-                            "Succeeded"
-                        ]
-                    }
-                ],
-                "policy": {
-                    "timeout": "0.12:00:00",
-                    "retry": 0,
-                    "retryIntervalInSeconds": 30,
-                    "secureOutput": false,
-                    "secureInput": false
-                },
-                "userProperties": [],
-                "typeProperties": {
-                    "source": {
-                        "type": "SqlDWSource",
-                        "sqlReaderQuery": "SELECT 1 AS a",
-                        "queryTimeout": "02:00:00",
-                        "partitionOption": "None"
-                    },
-                    "dataset": {
-                        "referenceName": "DS_Synapse_Managed_Identity",
-                        "type": "DatasetReference",
-                        "parameters": {
-                            "ServerName": {
-                                "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
-                                "type": "Expression"
-                            },
-                            "DatabaseName": "master"
-                        }
-                    },
-                    "firstRowOnly": false
-                }
             }
         ],
         "folder": {
-            "name": "Synapse Lakehouse Sync"
+            "name": "Synapse Lakehouse Sync Tutorial"
         },
         "annotations": [],
-        "lastPublishTime": "2022-08-31T20:00:38Z"
+        "lastPublishTime": "2022-09-02T13:26:34Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }
