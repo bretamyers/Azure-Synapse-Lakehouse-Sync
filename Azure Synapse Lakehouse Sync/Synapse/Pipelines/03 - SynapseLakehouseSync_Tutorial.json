@@ -110,6 +110,46 @@
                     },
                     "waitOnCompletion": true
                 }
+            },
+            {
+                "name": "Check table row counts for both loads",
+                "type": "Lookup",
+                "dependsOn": [
+                    {
+                        "activity": "Execute - Changes - SynapseLakehouseSync",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlDWSource",
+                        "sqlReaderQuery": "SELECT *, ABS(TableRowCountADLS - TableRowCountSynapse) AS Diff\nFROM logging.SynapseLakehouseSyncRecordCount\nORDER BY TableName, RowInsertDateTime\n",
+                        "queryTimeout": "02:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Synapse_Managed_Identity",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "ServerName": {
+                                "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+                                "type": "Expression"
+                            },
+                            "DatabaseName": "DataWarehouse"
+                        }
+                    },
+                    "firstRowOnly": false
+                }
             }
         ],
         "folder": {
