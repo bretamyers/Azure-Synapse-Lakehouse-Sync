@@ -1,7 +1,7 @@
 1. Add in the databricks notebooks and updated synapse pipelines
-2. Determine the right cluster size/specs
-3. Pick a databricks -> ADLS authentication method
-4. Copy the new dataset to the synapseanalyticspocdata storage account and update the script
+2. (Done) Determine the right cluster size/specs
+3. (Done) Pick a databricks -> ADLS authentication method
+4. (Done) Copy the new dataset to the synapseanalyticspocdata storage account and update the script
 5. Create some readme's to accompany the databricks notebooks, synapse pipelines, and example environment template
 6. Create a PPT with data lake pattern overview, why this solution, benefits, architecture diagrams
     Focus on 3 scenarios:
