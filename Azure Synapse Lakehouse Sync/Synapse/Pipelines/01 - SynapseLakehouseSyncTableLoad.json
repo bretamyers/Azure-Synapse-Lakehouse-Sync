@@ -119,7 +119,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.DatabaseName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_delete'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
+                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_delete'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -158,7 +158,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.DatabaseName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_delete'))\n,  '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.DatabaseName, '/', pipeline().parameters.TableName, '/_change_type=delete'))",
+                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_delete'))\n,  '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName, '/_change_type=delete'))",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -247,7 +247,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '_delete'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.DatabaseName, '/', pipeline().parameters.TableName\n, '/_change_type=delete'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '_delete', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
+                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_delete'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName\n, '/_change_type=delete'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_delete', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -293,7 +293,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(replace(variables('sqlDelete')\n,'{SchemaName}', pipeline().parameters.DatabaseName)\n,'{TableName}', pipeline().parameters.TableName)\n,'{UserName}', activity('Get Resource Class Required').output.firstRow.UserName)\n,'{KeyColumns}', pipeline().parameters.KeyColumns)\n,' SELECT 1 AS a'\n)",
+                                        "value": "@concat(replace(replace(replace(replace(variables('sqlDelete')\n,'{SchemaName}', pipeline().parameters.SchemaName)\n,'{TableName}', pipeline().parameters.TableName)\n,'{UserName}', activity('Get Resource Class Required').output.firstRow.UserName)\n,'{KeyColumns}', pipeline().parameters.KeyColumns)\n,' SELECT 1 AS a'\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -366,7 +366,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.DatabaseName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_update'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
+                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_update'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -405,7 +405,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.DatabaseName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_update'))\n,  '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.DatabaseName, '/', pipeline().parameters.TableName, '/_change_type=update_postimage'))\n",
+                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_update'))\n,  '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName, '/_change_type=update_postimage'))\n",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -494,7 +494,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '_update'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.DatabaseName, '/', pipeline().parameters.TableName\n, '/_change_type=update_postimage'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '_update', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
+                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_update'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName\n, '/_change_type=update_postimage'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_update', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -540,7 +540,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(replace(variables('sqlUpdate')\n,'{SchemaName}', pipeline().parameters.DatabaseName)\n,'{TableName}', pipeline().parameters.TableName)\n,'{KeyColumns}', pipeline().parameters.KeyColumns)\n,'{UserName}', activity('Get Resource Class Required - Update').output.firstRow.UserName)\n,' SELECT 1 AS a'\n)",
+                                        "value": "@concat(replace(replace(replace(replace(variables('sqlUpdate')\n,'{SchemaName}', pipeline().parameters.SchemaName)\n,'{TableName}', pipeline().parameters.TableName)\n,'{KeyColumns}', pipeline().parameters.KeyColumns)\n,'{UserName}', activity('Get Resource Class Required - Update').output.firstRow.UserName)\n,' SELECT 1 AS a'\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -586,7 +586,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('sqlAlterColumn')\n, '{SchemaName}', pipeline().parameters.DatabaseName)\n, '{TableNameBase}', pipeline().parameters.TableName)\n, '{TableNameStage}', concat(pipeline().parameters.TableName, '_update'))\n, '; SELECT 1 AS a')\n",
+                                        "value": "@concat(replace(replace(replace(variables('sqlAlterColumn')\n, '{SchemaName}', pipeline().parameters.SchemaName)\n, '{TableNameBase}', pipeline().parameters.TableName)\n, '{TableNameStage}', concat(pipeline().parameters.TableName, '_update'))\n, '; SELECT 1 AS a')\n",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -659,7 +659,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.DatabaseName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_insert'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
+                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_insert'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -698,7 +698,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.DatabaseName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_insert'))\n, '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.DatabaseName, '/', pipeline().parameters.TableName, '/_change_type=insert'))",
+                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_insert'))\n, '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName, '/_change_type=insert'))",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -787,7 +787,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '_insert'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.DatabaseName, '/', pipeline().parameters.TableName\n, '/_change_type=insert'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '_insert', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
+                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_insert'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName\n, '/_change_type=insert'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_insert', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -833,7 +833,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(replace(variables('sqlInsert')\n,'{SchemaName}', pipeline().parameters.DatabaseName)\n,'{TableName}', pipeline().parameters.TableName)\n,'{KeyColumns}', pipeline().parameters.KeyColumns)\n,'{UserName}', activity('Get Resource Class Required - Insert').output.firstRow.UserName)\n,' SELECT 1 AS a'\n)\n",
+                                        "value": "@concat(replace(replace(replace(replace(variables('sqlInsert')\n,'{SchemaName}', pipeline().parameters.SchemaName)\n,'{TableName}', pipeline().parameters.TableName)\n,'{KeyColumns}', pipeline().parameters.KeyColumns)\n,'{UserName}', activity('Get Resource Class Required - Insert').output.firstRow.UserName)\n,' SELECT 1 AS a'\n)\n",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -879,7 +879,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('sqlAlterColumn')\n, '{SchemaName}', pipeline().parameters.DatabaseName)\n, '{TableNameBase}', pipeline().parameters.TableName)\n, '{TableNameStage}', concat(pipeline().parameters.TableName, '_insert'))\n, '; SELECT 1 AS a')\n",
+                                        "value": "@concat(replace(replace(replace(variables('sqlAlterColumn')\n, '{SchemaName}', pipeline().parameters.SchemaName)\n, '{TableNameBase}', pipeline().parameters.TableName)\n, '{TableNameStage}', concat(pipeline().parameters.TableName, '_insert'))\n, '; SELECT 1 AS a')\n",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -947,7 +947,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.DatabaseName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_full_load'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
+                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_full_load'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -993,7 +993,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.DatabaseName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_full_load'))\n,  '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.DatabaseName, '/', pipeline().parameters.TableName, '/_change_type=full_load'))",
+                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_full_load'))\n,  '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName, '/_change_type=full_load'))",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -1082,7 +1082,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '_full_load'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.DatabaseName, '/', pipeline().parameters.TableName\n, '/_change_type=full_load'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '_full_load', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
+                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_full_load'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName\n, '/_change_type=full_load'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_full_load', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -1129,7 +1129,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(replace(replace(replace(replace(variables('CTAS')\n\t, '{ResourceClassName}', activity('Get Resource Class Required - Full Load').output.firstRow.UserName)\n\t, '{SchemaNameStaging}', pipeline().parameters.DatabaseName)\n\t, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_full_load'))\n\t, '{TableNameFinal}', pipeline().parameters.TableName)\n\t, '{PipelineRunId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n\t, '{PipelineStartDate}', pipeline().parameters.PipelineValue[0].PipelineStartDate)\n\t, '{PipelineStartDateTime}', pipeline().parameters.PipelineValue[0].PipelineStartDateTime)\n)",
+                                        "value": "@concat(replace(replace(replace(replace(replace(replace(replace(variables('CTAS')\n\t, '{ResourceClassName}', activity('Get Resource Class Required - Full Load').output.firstRow.UserName)\n\t, '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n\t, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_full_load'))\n\t, '{TableNameFinal}', pipeline().parameters.TableName)\n\t, '{PipelineRunId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n\t, '{PipelineStartDate}', pipeline().parameters.PipelineValue[0].PipelineStartDate)\n\t, '{PipelineStartDateTime}', pipeline().parameters.PipelineValue[0].PipelineStartDateTime)\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -1174,7 +1174,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@CONCAT('/*Auto Distribution/Index*/ EXECUTE AS user = ''', activity('Get Resource Class Required - Full Load').output.firstRow.UserName\n, ''' IF OBJECT_ID(''', pipeline().parameters.DatabaseName, '.', pipeline().parameters.TableName, ''', ''U'') IS NOT NULL DROP TABLE [', pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName\n, ']; CREATE TABLE [', pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '] ', activity('Profile Staging Table').output.firstRow.DistributionIndex,' AS SELECT * FROM [', pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '_full_load]  OPTION (LABEL = ''CTAS - [', pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '] - ', pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')\n\n",
+                                        "value": "@CONCAT('/*Auto Distribution/Index*/ EXECUTE AS user = ''', activity('Get Resource Class Required - Full Load').output.firstRow.UserName\n, ''' IF OBJECT_ID(''', pipeline().parameters.SchemaName, '.', pipeline().parameters.TableName, ''', ''U'') IS NOT NULL DROP TABLE [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName\n, ']; CREATE TABLE [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '] ', activity('Profile Staging Table').output.firstRow.DistributionIndex,' AS SELECT * FROM [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_full_load]  OPTION (LABEL = ''CTAS - [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '] - ', pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')\n\n",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -1213,7 +1213,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('IF OBJECT_ID(''', pipeline().parameters.DatabaseName, '.', pipeline().parameters.TableName, ''', ''U'') IS NOT NULL\n\tDROP TABLE [', pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '];'\n, ' SELECT 1 AS a')",
+                                        "value": "@concat('IF OBJECT_ID(''', pipeline().parameters.SchemaName, '.', pipeline().parameters.TableName, ''', ''U'') IS NOT NULL\n\tDROP TABLE [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '];'\n, ' SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -1279,7 +1279,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('IF OBJECT_ID(''', pipeline().parameters.DatabaseName, '.', pipeline().parameters.TableName, '_', if(equals(item(), 'update_postimage'), 'update', item()), ''', ''U'') IS NOT NULL\n    DROP TABLE [', pipeline().parameters.DatabaseName, '].[', pipeline().parameters.TableName, '_', if(equals(item(), 'update_postimage'), 'update', item()), '];'\n, ' SELECT 1 AS a')",
+                                        "value": "@concat('IF OBJECT_ID(''', pipeline().parameters.SchemaName, '.', pipeline().parameters.TableName, '_', if(equals(item(), 'update_postimage'), 'update', item()), ''', ''U'') IS NOT NULL\n    DROP TABLE [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_', if(equals(item(), 'update_postimage'), 'update', item()), '];'\n, ' SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "02:00:00",
@@ -1388,7 +1388,7 @@
                     "source": {
                         "type": "SqlDWSource",
                         "sqlReaderQuery": {
-                            "value": "@concat('EXECUTE AS USER = ''Userstaticrc10''; DECLARE @RowInsertDateTime DATETIME2(0) = GETDATE()\n,@TableRowCountSynapse BIGINT = (SELECT COUNT_BIG(*) FROM ', pipeline().parameters.DatabaseName, '.', pipeline().parameters.TableName, ')\nINSERT logging.SynapseLakehouseSyncRecordCount (PoolName, DatabaseName, TableName, TableRowCountADLS, TableRowCountSynapse, RowInsertDateTime)\nVALUES (\n''', pipeline().parameters.PoolName,''',\n''', pipeline().parameters.DatabaseName,''',\n''', pipeline().parameters.TableName,''', '\n, pipeline().parameters.DatabricksOutput.TableRowCountADLS\n, ', @TableRowCountSynapse, @RowInsertDateTime)\n; SELECT @TableRowCountSynapse AS TableRowCountSynapse\n')",
+                            "value": "@concat('EXECUTE AS USER = ''Userstaticrc10''; DECLARE @RowInsertDateTime DATETIME2(0) = GETDATE()\n,@TableRowCountSynapse BIGINT = (SELECT COUNT_BIG(*) FROM ', pipeline().parameters.SchemaName, '.', pipeline().parameters.TableName, ')\nINSERT logging.SynapseLakehouseSyncRecordCount (PoolName, DatabaseName, TableName, TableRowCountADLS, TableRowCountSynapse, RowInsertDateTime)\nVALUES (\n''', pipeline().parameters.PoolName,''',\n''', pipeline().parameters.SchemaName,''',\n''', pipeline().parameters.TableName,''', '\n, pipeline().parameters.DatabricksOutput.TableRowCountADLS\n, ', @TableRowCountSynapse, @RowInsertDateTime)\n; SELECT @TableRowCountSynapse AS TableRowCountSynapse\n')",
                             "type": "Expression"
                         },
                         "queryTimeout": "02:00:00",
@@ -1421,7 +1421,7 @@
                 "type": "string",
                 "defaultValue": "FactInternetSales"
             },
-            "DatabaseName": {
+            "SchemaName": {
                 "type": "string",
                 "defaultValue": "AdventureWorks"
             },
@@ -1485,7 +1485,7 @@
             "name": "Synapse Lakehouse Sync"
         },
         "annotations": [],
-        "lastPublishTime": "2022-09-02T13:03:21Z"
+        "lastPublishTime": "2022-09-06T01:01:04Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }

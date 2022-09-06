@@ -18,7 +18,7 @@
                     "source": {
                         "type": "SqlDWSource",
                         "sqlReaderQuery": {
-                            "value": "@concat('SELECT PoolName, DatabaseName, TableName, KeyColumns, DataFolderPathFull AS FolderPathFull, SyncFolderPathFull AS ChangesFolderPathFull\n FROM OPENROWSET(\n        BULK ''', pipeline().parameters.StorageAccountNameMetadata, ''',\n        FORMAT = ''CSV'',\n\t\tPARSER_VERSION = ''2.0'', \n        HEADER_ROW = TRUE\n    ) AS [result]')",
+                            "value": "@concat('SELECT PoolName, SchemaName, TableName, KeyColumns, DataFolderPathFull, SyncFolderPathFull\n FROM OPENROWSET(\n        BULK ''', pipeline().parameters.StorageAccountNameMetadata, ''',\n        FORMAT = ''CSV'',\n\t\tPARSER_VERSION = ''2.0'', \n        HEADER_ROW = TRUE\n    ) AS [result]')",
                             "type": "Expression"
                         },
                         "queryTimeout": "02:00:00",
@@ -77,20 +77,20 @@
                             "typeProperties": {
                                 "notebookPath": "/Synapse Lakehouse Sync/Synapse Lakehouse Sync ADLS",
                                 "baseParameters": {
-                                    "FolderPathFull": {
-                                        "value": "@item().FolderPathFull",
+                                    "DataFolderPathFull": {
+                                        "value": "@item().DataFolderPathFull",
                                         "type": "Expression"
                                     },
-                                    "DatabaseName": {
-                                        "value": "@item().DatabaseName",
+                                    "SchemaName": {
+                                        "value": "@item().SchemaName",
                                         "type": "Expression"
                                     },
                                     "TableName": {
                                         "value": "@item().TableName",
                                         "type": "Expression"
                                     },
-                                    "ChangesFolderPathFull": {
-                                        "value": "@item().ChangesFolderPathFull",
+                                    "SyncFolderPathFull": {
+                                        "value": "@item().SyncFolderPathFull",
                                         "type": "Expression"
                                     },
                                     "ExistsFlagSynapse": {
@@ -186,7 +186,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@CONCAT('EXECUTE AS user = ''Userstaticrc10'' \nIF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE [name] = ''', item().DatabaseName, ''') EXEC(''CREATE SCHEMA ', item().DatabaseName, ''');SELECT 1 AS a')",
+                                        "value": "@CONCAT('EXECUTE AS user = ''Userstaticrc10'' \nIF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE [name] = ''', item().SchemaName, ''') EXEC(''CREATE SCHEMA ', item().SchemaName, ''');SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "02:00:00",
@@ -251,7 +251,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('SELECT COALESCE((SELECT ''True'' FROM sys.tables WHERE SCHEMA_NAME(schema_id) = ''', item().DatabaseName, ''' AND [name] = ''', item().TableName, '''), ''False'') AS ExistsFlagSynapse\n\t\t,''', item().PoolName, ''' AS PoolName\n\t\t,''', item().DatabaseName, ''' AS DatabaseName\n\t\t,''', item().TableName, ''' AS TableName\n\t\t,''', item().KeyColumns, ''' AS KeyColumns\n\t\t,''', item().FolderPathFull, ''' AS FolderPathFull\n\t\t,''', item().ChangesFolderPathFull, ''' AS ChangesFolderPathFull'\n)",
+                                        "value": "@concat('SELECT COALESCE((SELECT ''True'' FROM sys.tables WHERE SCHEMA_NAME(schema_id) = ''', item().SchemaName, ''' AND [name] = ''', item().TableName, '''), ''False'') AS ExistsFlagSynapse\n\t\t,''', item().PoolName, ''' AS PoolName\n\t\t,''', item().SchemaName, ''' AS SchemaName\n\t\t,''', item().TableName, ''' AS TableName\n\t\t,''', item().KeyColumns, ''' AS KeyColumns\n\t\t,''', item().DataFolderPathFull, ''' AS DataFolderPathFull\n\t\t,''', item().SyncFolderPathFull, ''' AS SyncFolderPathFull'\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "02:00:00",
@@ -353,8 +353,8 @@
                                                     "value": "@item().TableName",
                                                     "type": "Expression"
                                                 },
-                                                "DatabaseName": {
-                                                    "value": "@item().DatabaseName",
+                                                "SchemaName": {
+                                                    "value": "@item().SchemaName",
                                                     "type": "Expression"
                                                 },
                                                 "PoolName": {
@@ -423,8 +423,8 @@
                             "typeProperties": {
                                 "notebookPath": "/Synapse Lakehouse Sync/Synapse Lakehouse Sync Tracking Table Optimize",
                                 "baseParameters": {
-                                    "ChangesFolderPathFull": {
-                                        "value": "@item().ChangesFolderPathFull",
+                                    "SyncFolderPathFull": {
+                                        "value": "@item().SyncFolderPathFull",
                                         "type": "Expression"
                                     },
                                     "PoolName": {
@@ -468,7 +468,7 @@
                     "source": {
                         "type": "SqlDWSource",
                         "sqlReaderQuery": {
-                            "value": "@concat('DECLARE @json NVARCHAR(MAX)  = '''\n, activity('Lookup - Sync Pools').output.value\n, ''' SELECT DISTINCT PoolName, ChangesFolderPathFull\nFROM OPENJSON(@json)\nWITH\n(\n\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t,DatabaseName NVARCHAR(1000) ''$.DatabaseName''\n\t,TableName NVARCHAR(1000) ''$.TableName''\n\t,FolderPathFull NVARCHAR(1000) ''$.FolderPathFull''\n\t,ChangesFolderPathFull NVARCHAR(1000) ''$.ChangesFolderPathFull''\n) AS a'\n)",
+                            "value": "@concat('DECLARE @json NVARCHAR(MAX)  = '''\n, activity('Lookup - Sync Pools').output.value\n, ''' SELECT DISTINCT PoolName, SyncFolderPathFull\nFROM OPENJSON(@json)\nWITH\n(\n\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t,SchemaName NVARCHAR(1000) ''$.SchemaName''\n\t,TableName NVARCHAR(1000) ''$.TableName''\n\t,DataFolderPathFull NVARCHAR(1000) ''$.DataFolderPathFull''\n\t,SyncFolderPathFull NVARCHAR(1000) ''$.SyncFolderPathFull''\n) AS a'\n)",
                             "type": "Expression"
                         },
                         "queryTimeout": "02:00:00",
@@ -521,8 +521,8 @@
                             "typeProperties": {
                                 "notebookPath": "/Synapse Lakehouse Sync/Synapse Lakehouse Sync Create Tracking Table",
                                 "baseParameters": {
-                                    "ChangesFolderPathFull": {
-                                        "value": "@item().ChangesFolderPathFull",
+                                    "SyncFolderPathFull": {
+                                        "value": "@item().SyncFolderPathFull",
                                         "type": "Expression"
                                     },
                                     "PoolName": {
@@ -566,7 +566,7 @@
                     "source": {
                         "type": "SqlDWSource",
                         "sqlReaderQuery": {
-                            "value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', activity('Lookup - Sync Pools').output.value, '''\n\nSELECT DISTINCT PoolName\nFROM OPENJSON(@sql)\nWITH\n(\n\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t,DatabaseName NVARCHAR(1000) ''$.DatabaseName''\n\t,KeyColumns NVARCHAR(1000) ''$.TableName''\n\t,FolderPathFull NVARCHAR(1000) ''$.FolderPathFull''\n\t,ChangesFolderPathFull NVARCHAR(1000) ''$.ChangesFolderPathFull''\n)\n')",
+                            "value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', activity('Lookup - Sync Pools').output.value, '''\n\nSELECT DISTINCT PoolName\nFROM OPENJSON(@sql)\nWITH\n(\n\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t,SchemaName NVARCHAR(1000) ''$.SchemaName''\n\t,KeyColumns NVARCHAR(1000) ''$.TableName''\n\t,DataFolderPathFull NVARCHAR(1000) ''$.DataFolderPathFull''\n\t,SyncFolderPathFull NVARCHAR(1000) ''$.SyncFolderPathFull''\n)\n')",
                             "type": "Expression"
                         },
                         "queryTimeout": "02:00:00",
@@ -619,7 +619,7 @@
                             "typeProperties": {
                                 "source": {
                                     "type": "SqlDWSource",
-                                    "sqlReaderQuery": "EXECUTE AS USER = 'Userstaticrc10';\n\nIF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE [name] = 'logging')\n    EXEC ('CREATE SCHEMA [logging]')\n;\n\nIF OBJECT_ID('logging.DataProfile', 'U') IS NULL\nCREATE TABLE logging.DataProfile\n(\n\tId INT IDENTITY(1,1) NOT NULL\n\t,PipelineRunId NVARCHAR(50) NOT NULL\n\t,PipelineStartDate INT NOT NULL\n\t,PipelineStartDateTime DATETIME2(0) NOT NULL\n    ,SchemaName NVARCHAR(100) NOT NULL\n    ,TableName NVARCHAR(100) NOT NULL\n\t,ColumnName NVARCHAR(100) NOT NULL\n\t,DataTypeName NVARCHAR(100) NOT NULL\n\t,DataTypeFull NVARCHAR(100) NOT NULL\n\t,CharacterLength INT NULL\n\t,PrecisionValue INT NULL\t\n\t,ScaleValue INT NULL\t\n\t,UniqueValueCount BIGINT NOT NULL\n\t,NullCount BIGINT NOT NULL\n\t,MinValue NVARCHAR(MAX)\n\t,MaxValue NVARCHAR(MAX)\n\t,MinLength INT\n\t,MaxLength INT\n\t,DataAverage NUMERIC(30,2)\n\t,DataStdevp FLOAT\n\t,TableRowCount BIGINT NOT NULL\n\t,TableDataSpaceGB NUMERIC(20,2) NOT NULL\n\t,WeightedScore NUMERIC(30,4)\n\t,SqlCommandDataProfile NVARCHAR(MAX) NOT NULL\n\t,SqlCommandCTAS NVARCHAR(MAX) NOT NULL\n    ,RowInsertDateTime DATETIME2(0) NOT NULL\n)\nWITH (DISTRIBUTION = ROUND_ROBIN, CLUSTERED INDEX(PipelineStartDateTime, PipelineRunId)\n)\n;\n\nIF OBJECT_ID('logging.SynapseLakehouseSyncRecordCount', 'U') IS NULL\nCREATE TABLE logging.SynapseLakehouseSyncRecordCount\n(\n\tId BIGINT IDENTITY(1,1) NOT NULL\n\t,PoolName NVARCHAR(100) NOT NULL\n    ,DatabaseName NVARCHAR(100) NOT NULL\n    ,TableName NVARCHAR(100) NOT NULL\n\t,TableRowCountADLS BIGINT NULL\n\t,TableRowCountSynapse BIGINT NULL\n    ,RowInsertDateTime DATETIME2(0) NOT NULL\n)\nWITH \n(\n\tDISTRIBUTION = ROUND_ROBIN, CLUSTERED INDEX(RowInsertDateTime)\n)\n;\nSELECT 1 AS a",
+                                    "sqlReaderQuery": "EXECUTE AS USER = 'Userstaticrc10';\n\nIF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE [name] = 'logging')\n    EXEC ('CREATE SCHEMA [logging]')\n;\n\nIF OBJECT_ID('logging.DataProfile', 'U') IS NULL\nCREATE TABLE logging.DataProfile\n(\n\tId INT IDENTITY(1,1) NOT NULL\n\t,PipelineRunId NVARCHAR(50) NOT NULL\n\t,PipelineStartDate INT NOT NULL\n\t,PipelineStartDateTime DATETIME2(0) NOT NULL\n    ,SchemaName NVARCHAR(100) NOT NULL\n    ,TableName NVARCHAR(100) NOT NULL\n\t,ColumnName NVARCHAR(100) NOT NULL\n\t,DataTypeName NVARCHAR(100) NOT NULL\n\t,DataTypeFull NVARCHAR(100) NOT NULL\n\t,CharacterLength INT NULL\n\t,PrecisionValue INT NULL\t\n\t,ScaleValue INT NULL\t\n\t,UniqueValueCount BIGINT NOT NULL\n\t,NullCount BIGINT NOT NULL\n\t,MinValue NVARCHAR(MAX)\n\t,MaxValue NVARCHAR(MAX)\n\t,MinLength INT\n\t,MaxLength INT\n\t,DataAverage NUMERIC(30,2)\n\t,DataStdevp FLOAT\n\t,TableRowCount BIGINT NOT NULL\n\t,TableDataSpaceGB NUMERIC(20,2) NOT NULL\n\t,WeightedScore NUMERIC(30,4)\n\t,SqlCommandDataProfile NVARCHAR(MAX) NOT NULL\n\t,SqlCommandCTAS NVARCHAR(MAX) NOT NULL\n    ,RowInsertDateTime DATETIME2(0) NOT NULL\n)\nWITH (DISTRIBUTION = ROUND_ROBIN, CLUSTERED INDEX(PipelineStartDateTime, PipelineRunId)\n)\n;\n\nIF OBJECT_ID('logging.SynapseLakehouseSyncRecordCount', 'U') IS NULL\nCREATE TABLE logging.SynapseLakehouseSyncRecordCount\n(\n\tId BIGINT IDENTITY(1,1) NOT NULL\n\t,PoolName NVARCHAR(100) NOT NULL\n    ,SchemaName NVARCHAR(100) NOT NULL\n    ,TableName NVARCHAR(100) NOT NULL\n\t,TableRowCountADLS BIGINT NULL\n\t,TableRowCountSynapse BIGINT NULL\n    ,RowInsertDateTime DATETIME2(0) NOT NULL\n)\nWITH \n(\n\tDISTRIBUTION = ROUND_ROBIN, CLUSTERED INDEX(RowInsertDateTime)\n)\n;\nSELECT 1 AS a",
                                     "queryTimeout": "24:00:00",
                                     "partitionOption": "None"
                                 },
@@ -666,7 +666,7 @@
                     "source": {
                         "type": "SqlDWSource",
                         "sqlReaderQuery": {
-                            "value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', activity('Lookup - Sync Pools').output.value, '''\n\nSELECT DISTINCT PoolName, ChangesFolderPathFull\nFROM OPENJSON(@sql)\nWITH\n(\n\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t,DatabaseName NVARCHAR(1000) ''$.DatabaseName''\n\t,KeyColumns NVARCHAR(1000) ''$.TableName''\n\t,FolderPathFull NVARCHAR(1000) ''$.FolderPathFull''\n\t,ChangesFolderPathFull NVARCHAR(1000) ''$.ChangesFolderPathFull''\n)\n')",
+                            "value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', activity('Lookup - Sync Pools').output.value, '''\n\nSELECT DISTINCT PoolName, SyncFolderPathFull\nFROM OPENJSON(@sql)\nWITH\n(\n\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t,SchemaName NVARCHAR(1000) ''$.SchemaName''\n\t,KeyColumns NVARCHAR(1000) ''$.TableName''\n\t,DataFolderPathFull NVARCHAR(1000) ''$.DataFolderPathFull''\n\t,SyncFolderPathFull NVARCHAR(1000) ''$.SyncFolderPathFull''\n)\n')",
                             "type": "Expression"
                         },
                         "queryTimeout": "02:00:00",
@@ -709,7 +709,7 @@
                     "source": {
                         "type": "SqlDWSource",
                         "sqlReaderQuery": {
-                            "value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', activity('Lookup - Sync Pools').output.value, '''\n\nSELECT DISTINCT PoolName, DatabaseName\nFROM OPENJSON(@sql)\nWITH\n(\n\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t,DatabaseName NVARCHAR(1000) ''$.DatabaseName''\n\t,KeyColumns NVARCHAR(1000) ''$.TableName''\n\t,FolderPathFull NVARCHAR(1000) ''$.FolderPathFull''\n\t,ChangesFolderPathFull NVARCHAR(1000) ''$.ChangesFolderPathFull''\n)\n')",
+                            "value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', activity('Lookup - Sync Pools').output.value, '''\n\nSELECT DISTINCT PoolName, SchemaName\nFROM OPENJSON(@sql)\nWITH\n(\n\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t,SchemaName NVARCHAR(1000) ''$.SchemaName''\n\t,KeyColumns NVARCHAR(1000) ''$.TableName''\n\t,DataFolderPathFull NVARCHAR(1000) ''$.DataFolderPathFull''\n\t,SyncFolderPathFull NVARCHAR(1000) ''$.SyncFolderPathFull''\n)\n')",
                             "type": "Expression"
                         },
                         "queryTimeout": "02:00:00",
@@ -755,7 +755,7 @@
             "name": "Synapse Lakehouse Sync"
         },
         "annotations": [],
-        "lastPublishTime": "2022-09-01T20:41:21Z"
+        "lastPublishTime": "2022-09-06T01:01:09Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }

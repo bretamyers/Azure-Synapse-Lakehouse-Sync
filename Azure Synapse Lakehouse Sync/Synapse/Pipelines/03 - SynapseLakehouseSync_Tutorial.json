@@ -17,7 +17,7 @@
                 "typeProperties": {
                     "notebookPath": "/Synapse Lakehouse Sync Tutorial/Convert Parquet to Delta Tables - AdventureWorks",
                     "baseParameters": {
-                        "FolderPathFull": {
+                        "DataFolderPathFull": {
                             "value": "@concat('abfss://', 'data', '@', pipeline().DataFactory, '.dfs.core.windows.net/Sample/')",
                             "type": "Expression"
                         },
@@ -75,7 +75,7 @@
                 "typeProperties": {
                     "notebookPath": "/Synapse Lakehouse Sync Tutorial/Simulate Data Changes - AdventureWorks",
                     "baseParameters": {
-                        "FolderPathFull": {
+                        "DataFolderPathFull": {
                             "value": "@concat('abfss://', 'data', '@', pipeline().DataFactory, '.dfs.core.windows.net/Sample/')",
                             "type": "Expression"
                         },
@@ -156,7 +156,7 @@
             "name": "Synapse Lakehouse Sync Tutorial"
         },
         "annotations": [],
-        "lastPublishTime": "2022-09-02T13:26:34Z"
+        "lastPublishTime": "2022-09-03T00:49:52Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }
