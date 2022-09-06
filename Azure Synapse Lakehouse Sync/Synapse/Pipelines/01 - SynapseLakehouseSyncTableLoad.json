@@ -1340,7 +1340,7 @@
                             "value": "@pipeline().parameters.DatabricksOutput.SynapseLakehouseSyncKey",
                             "type": "Expression"
                         },
-                        "ChangesFolderPathFull": {
+                        "SyncFolderPathFull": {
                             "value": "@pipeline().parameters.DatabricksOutput.SynapseSync_abfss",
                             "type": "Expression"
                         },
