@@ -33,7 +33,7 @@ The following commands should be executed from the Azure Cloud Shell at https://
 - Secure storage for Azure Data Lake access keys and used by Databricks for authentication
 
 # What's Configured
-The deploySynapseSync.sh script will execute a Bicep deployment for the environment, and then configure the environment with the Azure Synapse Lakehouse Sync artifacts including: 
+The deploySynapseSync.sh script will execute a Bicep deployment for the environment and then configure the environment with the Azure Synapse Lakehouse Sync artifacts including: 
 
 - Synapse Workspace Pipelines
 - Synapse Workspace Linked Services
