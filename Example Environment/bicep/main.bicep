@@ -109,5 +109,6 @@ output databricksWorkspaceName string = databricksWorkspace.outputs.databricksWo
 output databricksWorkspaceUrl string = databricksWorkspace.outputs.databricksWorkspaceUrl
 output databricksWorkspaceId string = databricksWorkspace.outputs.databricksWorkspaceId
 output datalakeName string = synapseStorageAccount.outputs.synapseStorageAccountName
+output keyVaultName string = keyVault.outputs.keyVaultName
 output keyVaultVaultUri string = keyVault.outputs.keyVaultVaultUri
 output keyVaultId string = keyVault.outputs.keyVaultId

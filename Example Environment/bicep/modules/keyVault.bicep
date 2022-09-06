@@ -49,5 +49,6 @@ resource synapseStorageAccountKey 'Microsoft.KeyVault/vaults/secrets@2022-07-01'
   }
 }
 
+output keyVaultName string = keyVault.name
 output keyVaultVaultUri string = keyVault.properties.vaultUri
 output keyVaultId string = keyVault.id

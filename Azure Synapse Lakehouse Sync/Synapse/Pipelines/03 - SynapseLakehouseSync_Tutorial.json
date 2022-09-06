@@ -145,7 +145,7 @@
                                 "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
                                 "type": "Expression"
                             },
-                            "DatabaseName": "DataWarehouse"
+                            "DatabaseName": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
                         }
                     },
                     "firstRowOnly": false

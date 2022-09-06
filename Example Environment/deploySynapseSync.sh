@@ -37,30 +37,62 @@ declare -A bicepDeploymentDetails
 # Function to check the Bicep deployment state since we check multiple times
 checkBicepDeploymentState () {
     bicepDeploymentCheck=$(az deployment sub show --name ${bicepDeploymentName} --query properties.provisioningState --output tsv 2>&1 | sed 's/[[:space:]]*//g')
-    if [ "$bicepDeploymentCheck" = "Succeeded" ]; then
+    if [ "${bicepDeploymentCheck}" = "Succeeded" ]; then
         echo "Succeeded"
-    elif [ "$bicepDeploymentCheck" = "Failed" ] || [ "$bicepDeploymentCheck" = "Canceled" ]; then
+    elif [ "${bicepDeploymentCheck}" = "Failed" ] || [ "${bicepDeploymentCheck}" = "Canceled" ]; then
         echo "Failed"
-    elif [[ $bicepDeploymentCheck == *"DeploymentNotFound"* ]]; then
+    elif [[ "${bicepDeploymentCheck}" == *"DeploymentNotFound"* ]]; then
         echo "DeploymentNotFound"
+    fi
+}
+
+# Function to check if Azure Key Vault was deleted but not purged
+checkKeyVaultDeploymentState () {
+    keyVaultName=$(az deployment sub show --name ${bicepDeploymentName} --query properties.outputs.keyVaultName.value --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+    keyVaultState=$(az keyvault list-deleted --query "[?name=='${keyVaultName}'].{name:name}" --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+
+    if [[ ! "${keyVaultName}" == *"DeploymentNotFound"* ]] && [ ! "${keyVaultName}" = "" ]; then
+        if [ "${keyVaultState}" = "${keyVaultName}" ]; then
+            echo "DeletedNotPurged"
+        else
+            echo "NotDeletedNotPurged"
+        fi
+    else
+        echo "DoesNotExist"
     fi
 }
 
 # Function to output messages to both the user terminal and the log file
 function userOutput () {
-    echo "$(date) [${1}] ${2}" >> $deploymentLogFile
-    echo "${2}" > /dev/tty
+    CLEAR="\e[0m"
+    BLUE_BOLD="\e[1;34m"
+    RED_BOLD="\e[1;31m"
+    GREEN_BOLD="\e[1;32m"
+
+    # Log file output
+    echo "$(date) [${1}] ${2} ${3}" >> $deploymentLogFile
+
+    # Terminal output
+    if [ "${1}" = "ERROR" ]; then
+        echo -e "${RED_BOLD}ERROR:${CLEAR} ${2}" > /dev/tty
+    elif [ "${1}" = "STATUS" ]; then
+        echo -e "${2}" > /dev/tty
+    elif [ "${1}" = "RESULT" ]; then
+        echo -e "${BLUE_BOLD}${2}${CLEAR} ${3}" > /dev/tty
+    elif [ "${1}" = "DEPLOYMENT" ]; then
+        echo -e "\n${BLUE_BOLD}${2}${GREEN_BOLD} ${3}" > /dev/tty
+    fi
 }
 
 # Try and determine if we're executing from within the Azure Cloud Shell
 if [ ! "${AZUREPS_HOST_ENVIRONMENT}" = "cloud-shell/1.0" ]; then
-    output "ERROR" "It doesn't appear you are executing this from the Azure Cloud Shell. Please use the Azure Cloud Shell at https://shell.azure.com"
+    output "ERROR" "It doesn't appear you are executing this from the Azure Cloud Shell. Please use Bash in the Azure Cloud Shell at https://shell.azure.com"
     exit 1;
 fi
 
 # Try and get a token to validate that we're logged into Azure CLI
 aadToken=$(az account get-access-token --resource=https://dev.azuresynapse.net --query accessToken --output tsv 2>&1 | sed 's/[[:space:]]*//g')
-if [[ $aadToken == *"ERROR"* ]]; then
+if [[ "${aadToken}" == *"ERROR"* ]]; then
     userOutput "ERROR" "You don't appear to be logged in to Azure CLI. Please login to the Azure CLI using 'az login'"
     exit 1;
 fi
@@ -79,31 +111,32 @@ for value in "${accountDetails[@]}"; do
 done
 
 # Display some environment details to the user
-userOutput "INFO" "Azure Subscription: ${accountDetails[azureSubscriptionName]}"
-userOutput "INFO" "Azure Subscription ID: ${accountDetails[azureSubscriptionID]}"
-userOutput "INFO" "Azure AD Username: ${accountDetails[azureUsername]}"
-userOutput "INFO" "Azure AD User Object Id: ${accountDetails[azureUsernameObjectId]}"
+userOutput "RESULT" "Azure Subscription:" ${accountDetails[azureSubscriptionName]}
+userOutput "RESULT" "Azure Subscription ID:" ${accountDetails[azureSubscriptionID]}
+userOutput "RESULT" "Azure AD Username:" ${accountDetails[azureUsername]}
+userOutput "RESULT" "Azure AD User Object Id:" ${accountDetails[azureUsernameObjectId]}
 
 # Update a Bicep variable if it isn't configured by the user. This allows Bicep to add the user Object Id
 # to the Storage Blob Data Contributor role on the Azure Data Lake Storage Gen2 account, which allows Synapse
 # Serverless SQL to query files on storage.
 sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${accountDetails[azureUsernameObjectId]}/g" bicep/main.parameters.json 2>&1
 
-# Check to see if the Bicep deployment was already completed manually. If not, lets do it.
-if [ $(checkBicepDeploymentState) = "DeploymentNotFound" ]; then
-    # Get the Azure Region from the Bicep main.parameters.json
-    bicepAzureRegion=$(jq -r .parameters.azureRegion.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
-
-    # Bicep deployment via Azure CLI
-    userOutput "INFO" "Deploying environment via Bicep. This will take several minutes..."
-    bicepDeploy=$(az deployment sub create --template-file bicep/main.bicep --parameters bicep/main.parameters.json --name ${bicepDeploymentName} --location ${bicepAzureRegion} 2>&1 | tee -a $deploymentLogFile)
-else
-    userOutput "INFO" "It appears the Bicep deployment was done manually. Skipping..."
+# Make sure Azure Key Vault was not deleted but also not purged. Bicep will throw an error if it's in the purged state.
+if [ $(checkKeyVaultDeploymentState) = "DeletedNotPurged" ]; then
+    userOutput "ERROR" "Azure Key Vault was previously created by this deployment and deleted, but not purged. You must manually purge the previous Key Vault via 'az keyvault purge' before it can be deployed again."
+    exit 1;
 fi
+
+# Get the Azure Region from the Bicep main.parameters.json
+bicepAzureRegion=$(jq -r .parameters.azureRegion.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
+
+# Bicep deployment via Azure CLI
+userOutput "STATUS" "Deploying environment via Bicep. This may take several minutes..."
+bicepDeploy=$(az deployment sub create --template-file bicep/main.bicep --parameters bicep/main.parameters.json --name ${bicepDeploymentName} --location ${bicepAzureRegion} 2>&1 | tee -a $deploymentLogFile)
 
 # Make sure the Bicep deployment was successful 
 if [ $(checkBicepDeploymentState) = "Failed" ]; then
-    userOutput "ERROR" "It looks like a Bicep deployment was attempted but failed."
+    userOutput "ERROR" "The Bicep deployment was attempted but failed. You can view further details by going to Subscriptions -> ${accountDetails[azureSubscriptionName]} -> Deployments in the Azure portal."
     exit 1;
 fi
 
@@ -131,30 +164,23 @@ bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]=$(jq -r .parameters
 # Get the Databricks Workspace Azure AD accessToken for authentication
 databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output tsv --query accessToken 2>&1 | sed 's/[[:space:]]*//g')
 
-# Display the deployment details to the user
-userOutput "INFO" "Resource Group: ${bicepDeploymentDetails[resourceGroup]}"
-userOutput "INFO" "Synapse Analytics Workspace: ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}"
-userOutput "INFO" "Synapse Analytics SQL Admin: ${bicepDeploymentDetails[synapseSQLAdministratorLogin]}"
-userOutput "INFO" "Databricks Workspace: ${bicepDeploymentDetails[databricksWorkspaceName]}"
-userOutput "INFO" "Data Lake Name: ${bicepDeploymentDetails[datalakeName]}"
-
 ################################################################################
 # Databricks Workspace Settings                                                #
 ################################################################################
 
 # Create the Azure Key Vault Scope in the Databricks Workspace
-userOutput "INFO" "Creating the Databricks Workspace Azure Key Vault Scope..."
+userOutput "STATUS" "Creating the Databricks Workspace Azure Key Vault Scope..."
 createDatabricksKeyVaultScope=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/secrets/scopes/create --body "{ \"scope\": \"DataLakeStorageKey\", \"scope_backend_type\": \"AZURE_KEYVAULT\", \"backend_azure_keyvault\": { \"resource_id\": \"${bicepDeploymentDetails[keyVaultId]}\", \"dns_name\": \"${bicepDeploymentDetails[keyVaultVaultUri]}\" }, \"initial_manage_principal\": \"users\" }" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" 2>&1 | tee -a $deploymentLogFile)
 
 # Create the Databricks Cluster
-userOutput "INFO" "Creating the Databricks Workspace Cluster definition..."
+userOutput "STATUS" "Creating the Databricks Workspace Cluster definition..."
 createDatabricksCluster=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/Cluster Definition/SynapseLakehouseSyncCluster.json" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" --query cluster_id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 
 ################################################################################
 # Databricks Workspace Notebooks                                               #
 ################################################################################
 
-userOutput "INFO" "Creating the Databricks Workspace Notebooks..."
+userOutput "STATUS" "Creating the Databricks Workspace Notebooks..."
 
 # Create the Databricks Workspace folders for the notebooks
 for databricksNotebookFolder in '../Azure Synapse Lakehouse Sync/Databricks/Notebooks'/*/
@@ -182,17 +208,17 @@ done
 # Synapse Queries                                                              #
 ################################################################################
 
-userOutput "INFO" "Executing Synapse Queries..."
+userOutput "STATUS" "Executing Synapse Queries..."
 
 # Execute one query against master
 executeQuery=$(sqlcmd -U ${bicepDeploymentDetails[synapseSQLAdministratorLogin]} -P ${bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]} -S tcp:${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE ${bicepDeploymentDetails[synapseSQLPoolName]} SET RESULT_SET_CACHING ON;" 2>&1 | tee -a $deploymentLogFile)
 
 # Validate the Synapse Dedicated SQL Pool is running and we were able to establish a connection
-if [[ $executeQuery == *"Cannot connect to database when it is paused"* ]]; then
+if [[ "${executeQuery}" == *"Cannot connect to database when it is paused"* ]]; then
     userOutput "ERROR" "The Synapse Dedicated SQL Pool is paused. Please resume the pool and run this script again."
     exit 1;
-elif [[ $executeQuery == *"Login timeout expired"* ]]; then
-    userOutput "ERROR" "Unable to connect to the Synapse Dedicated SQL Pool. The exact reason is unknown."
+elif [[ "${executeQuery}" == *"Login timeout expired"* ]]; then
+    userOutput "ERROR" "Unable to connect to the Synapse Dedicated SQL Pool. The exact reason is unknown but you can check ${deploymentLogFile} for details."
     exit 1;
 fi
 
@@ -206,7 +232,7 @@ done
 # Synapse Workspace Linked Services                                            #
 ################################################################################
 
-userOutput "INFO" "Creating the Synapse Workspace Linked Services..."
+userOutput "STATUS" "Creating the Synapse Workspace Linked Services..."
 
 for synapseLinkedService in '../Azure Synapse Lakehouse Sync/Synapse/Linked Services'/*.json
 do
@@ -227,7 +253,7 @@ done
 # Synapse Workspace Datasets                                                   #
 ################################################################################
 
-userOutput "INFO" "Creating the Synapse Workspace Datasets..."
+userOutput "STATUS" "Creating the Synapse Workspace Datasets..."
 
 for synapseDataSet in '../Azure Synapse Lakehouse Sync/Synapse/Datasets'/*.json
 do
@@ -242,7 +268,7 @@ done
 # Synapse Workspace Pipelines                                                  #
 ################################################################################
 
-userOutput "INFO" "Creating the Synapse Lakehouse Sync Pipelines..."
+userOutput "STATUS" "Creating the Synapse Lakehouse Sync Pipelines..."
 
 for synapsePipeline in '../Azure Synapse Lakehouse Sync/Synapse/Pipelines'/*.json
 do
@@ -267,7 +293,7 @@ destinationStorageSAS=$(az storage container generate-sas --account-name ${bicep
 sampleDataStorageSAS="?sv=2021-06-08&st=2022-08-01T04%3A00%3A00Z&se=2023-08-01T04%3A00%3A00Z&sr=c&sp=rl&sig=DjC4dPo5AKYkNFplik2v6sH%2Fjhl2k1WTzna%2F1eV%2BFv0%3D"
 
 # Copy sample data
-userOutput "INFO" "Copying the sample data..."
+userOutput "STATUS" "Copying the sample data..."
 sampleDataCopy=$(az storage copy -s "https://synapseanalyticspocdata.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_changes/${sampleDataStorageSAS}" -d "https://${bicepDeploymentDetails[datalakeName]}.blob.core.windows.net/data/Sample?${destinationStorageSAS}" --recursive 2>&1 >> $deploymentLogFile)
 sampleDataCopy=$(az storage copy -s "https://synapseanalyticspocdata.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_parquet/${sampleDataStorageSAS}" -d "https://${bicepDeploymentDetails[datalakeName]}.blob.core.windows.net/data/Sample?${destinationStorageSAS}" --recursive 2>&1 >> $deploymentLogFile)
 
@@ -275,4 +301,12 @@ sampleDataCopy=$(az storage copy -s "https://synapseanalyticspocdata.blob.core.w
 sed -i "s/REPLACE_DATALAKE_NAME/${bicepDeploymentDetails[datalakeName]}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
 sampleDataCopy=$(az storage copy -s "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv" -d "https://${bicepDeploymentDetails[datalakeName]}.blob.core.windows.net/data?${destinationStorageSAS}" 2>&1 >> $deploymentLogFile)
 
-userOutput "INFO" "Deployment Complete!"
+# Display the deployment details to the user
+userOutput "DEPLOYMENT" "Deployment:" "Complete"
+userOutput "RESULT" "Resource Group:" ${bicepDeploymentDetails[resourceGroup]}
+userOutput "RESULT" "Synapse Analytics Workspace Name:" ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}
+userOutput "RESULT" "Synapse Analytics SQL Admin:" ${bicepDeploymentDetails[synapseSQLAdministratorLogin]}
+userOutput "RESULT" "Databricks Workspace Name:" ${bicepDeploymentDetails[databricksWorkspaceName]}
+userOutput "RESULT" "Data Lake Name:" ${bicepDeploymentDetails[datalakeName]}
+userOutput "RESULT" "Synapse Analytics Workspace:" "https://web.azuresynapse.net"
+userOutput "RESULT" "Databricks Workspace:" "https://${bicepDeploymentDetails[databricksWorkspaceUrl]}"
