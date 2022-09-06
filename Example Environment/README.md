@@ -3,7 +3,7 @@
 Whether you're new to the data lake & lakehouse pattern, or exploring how Synapse Lakehouse Sync would work in your environment, this will deploy an end-to-end example environment. We wanted to provide an easy option for you to evaluate and understand how Azure Synapse Lakehouse Sync works with little effort.
 
 
-# How to Run
+# How to Deploy
 
 ### "Easy Button" Deployment
 The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using Bash:
@@ -15,7 +15,7 @@ The following commands should be executed from the Azure Cloud Shell at https://
 @Azure:~$ bash deploySynapseSync.sh 
 ```
 
-# What's Deployed
+## What's Deployed
 
 ### Azure Synapse Analytics Workspace
 - DW1000 Dedicated SQL Pool
@@ -32,7 +32,7 @@ The following commands should be executed from the Azure Cloud Shell at https://
 ### Azure Key Vault
 - Secure storage for Azure Data Lake access keys and used by Databricks for authentication
 
-# What's Configured
+## What's Configured
 The deploySynapseSync.sh script will execute a Bicep deployment for the environment and then configure the environment with the Azure Synapse Lakehouse Sync artifacts including: 
 
 - Synapse Workspace Pipelines
@@ -44,3 +44,5 @@ The deploySynapseSync.sh script will execute a Bicep deployment for the environm
 - Azure Key Vault / Azure Data Lake Storage Access Keys
 - Databricks Workspace / Azure Key Vault Secret Scope
 - Sample Data
+
+# How to use Azure Synapse Lakehouse Sync Tutorial
