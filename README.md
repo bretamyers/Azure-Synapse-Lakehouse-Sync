@@ -77,6 +77,27 @@ The sync solution is self contained and is self healing. No artifacts need to ex
 Initial benchmarks shows that using the _Id column created using the gnereate always as identity, produces 30-60% faster loads.
 
 
+### Loading Process
+1.	The Synapse Lakehouse Sync pipeline first reads a csv file that is in the format of the example metadata file. You provide the ADLS full path location of the csv file as a parameter to the pipeline.
+2.	It then will query the pool names specified in the metadata csv file to determine what schemas and tables exist in the pool. 
+3.	We then create any schemas in the pool that were specified in the metatdata file but did not exist in the pool.
+4.	An Azure Databricks notebook is then executed that utilizes the delta 2.0 change feed feature to stage inserts, updates, and deletes on each table into the SyncFolderPathFull destination that was supplied in the metadata. The data is landed in the following naming convention:
+{SyncFolderPath}/{PoolName}_SynapseLakehouseSync/{DatabaseName}/{TableName}
+A full load will occur if the table was not found in the pool or the Synapse Lakehouse Sync table does not contain an entry for that pool, database, and table combination. A full load pull the latest version of all the data from the delta table and drop if exists, create, and load the table in the dedicated pool apply the smallest datatypes possible given the data that is being loaded. It also take a best guess on table distribution and index based off of the profile of the data being loaded.
+If the table exists in the pool and there is data for that pool, database, and table combination in the sync tracking table, we then do an incremental load. An incremental load uses the delta change feed functionality to pull the latest version per change type (insert, update, delete) and place these records onto ADLS into separate directories in parquet format.
+5.	The data is then loaded from the change folders into the pool as staging tables (round_robin heaps) with the following naming convention {DatabaseName}.{TableName}_{ChangeType}.
+6.	Once staged, we then dynamically construct the delete, insert, and update statements and execute them in that order against the final table.
+7.	If the statements are successful, we then update the log entry in the tracking table.
+8.	Lastly, the pipeline will then run the vacuum and optimize commands on the Synapse Lakehouse Sync tracking delta table.
+
+
+#### Not compatible column data types
+- ArrayType
+- MapType
+- Nested StructType
+
+
+
 #### Synaple Lakehouse Sync Metadata File
 |     Column Name           |     Description                                                                                                                                                                                                                              |
 |---------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -154,9 +175,6 @@ A delta table that is created in the specified SyncFolderPathFull value from Syn
 |     ADLSStagedFlag             |     A flag for identifying when the   data from the changed data feed has been queried and staged into ADLS.                                                                                                                                                                                                                                                                                                                                          |
 |     SynapseLoadedFlag          |     A flag for identifying when the   data was successfully loaded into Synapse. No pipeline errors occurred.                                                                                                                                                                                                                                                                                                                                         |
 |     SynapseLoadedDateTime      |     The datetime of when the data   was loaded into Synapse with no errors.                                                                                                                                                                                                                                                                                                                                                                           |
-
-
-
 
 
 
