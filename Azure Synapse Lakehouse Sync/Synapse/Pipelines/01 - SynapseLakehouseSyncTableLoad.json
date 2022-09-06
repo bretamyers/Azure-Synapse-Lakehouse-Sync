@@ -1415,7 +1415,7 @@
         "parameters": {
             "SynapseSync_https": {
                 "type": "string",
-                "defaultValue": "https://adlsbrmyers.dfs.core.windows.net/bronzezone/AdventureWorks_SynapseSync/"
+                "defaultValue": "abfss://data@synapsesynccav.dfs.core.windows.net/Sample/"
             },
             "TableName": {
                 "type": "string",
@@ -1427,7 +1427,7 @@
             },
             "PoolName": {
                 "type": "string",
-                "defaultValue": "TPCDSDW"
+                "defaultValue": "DataWarehouse"
             },
             "PipelineValue": {
                 "type": "array"
@@ -1440,7 +1440,7 @@
             },
             "DatabricksOutput": {
                 "type": "object",
-                "defaultValue": "{ \t\"SynapseSync_abfss\": \"abfss://bronzezone@adlsbrmyers.dfs.core.windows.net\", \t\"SynapseSync_https\": \"https://adlsbrmyers.dfs.core.windows.net/bronzezone\", \t\"PoolName\": \"TPCDSDW\", \t\"DatabaseName\": \"AdventureWorks\", \t\"TableName\": \"FactInternetSales\", \t\"ExistsFlagSynapse\": \"False\", \t\"ChangeTypes\": [ \t\t\"full_load\" \t], \t\"TableRowCount\": \"20\" \t\"SynapseLakehouseSyncKey\": \"fdb1056f48b7bf06b31eea5c2afcb1eb\" }"
+                "defaultValue": "{ \t\"SynapseSync_abfss\": \"abfss://data@synapsesynccav.dfs.core.windows.net/Sample/AdventureWorks/DimCustomer\", \t\"SynapseSync_https\": \"abfss://data@synapsesynccav.dfs.core.windows.net/Sample/\", \t\"PoolName\": \"DataWarehouse\", \t\"DatabaseName\": \"AdventureWorks\", \t\"TableName\": \"FactInternetSales\", \t\"ExistsFlagSynapse\": \"False\", \t\"ChangeTypes\": [ \t\t\"full_load\" \t], \t\"TableRowCount\": \"20\" \t\"SynapseLakehouseSyncKey\": \"fdb1056f48b7bf06b31eea5c2afcb1eb\" }"
             },
             "DropTableFlag": {
                 "type": "bool",
