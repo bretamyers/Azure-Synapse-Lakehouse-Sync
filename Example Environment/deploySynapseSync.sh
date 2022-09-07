@@ -144,7 +144,7 @@ fi
 # Part 2: Post-Deployment Configuration                                        #
 ################################################################################
 
-bicepOutputVariables=("resourceGroup" "synapseAnalyticsWorkspaceName" "synapseSQLPoolName" "synapseSQLAdministratorLogin" "databricksWorkspaceName" "databricksWorkspaceUrl" "databricksWorkspaceId" "datalakeName" "keyVaultVaultUri" "keyVaultId")
+bicepOutputVariables=("resourceGroup" "synapseAnalyticsWorkspaceName" "synapseStorageAccountName" "enterpriseDataLakeStorageAccountName" "synapseSQLPoolName" "synapseSQLAdministratorLogin" "databricksWorkspaceName" "databricksWorkspaceUrl" "databricksWorkspaceId" "keyVaultVaultUri" "keyVaultId")
 
 # Get the output variables from the Bicep deployment
 for bicepVariable in "${bicepOutputVariables[@]}"; do 
@@ -170,7 +170,7 @@ databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab
 
 # Create the Azure Key Vault Scope in the Databricks Workspace
 userOutput "STATUS" "Creating the Databricks Workspace Azure Key Vault Scope..."
-createDatabricksKeyVaultScope=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/secrets/scopes/create --body "{ \"scope\": \"DataLakeStorageKey\", \"scope_backend_type\": \"AZURE_KEYVAULT\", \"backend_azure_keyvault\": { \"resource_id\": \"${bicepDeploymentDetails[keyVaultId]}\", \"dns_name\": \"${bicepDeploymentDetails[keyVaultVaultUri]}\" }, \"initial_manage_principal\": \"users\" }" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" 2>&1 | tee -a $deploymentLogFile)
+createDatabricksKeyVaultScope=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/secrets/scopes/create --body "{ \"scope\": \"AzureKeyVaultScope\", \"scope_backend_type\": \"AZURE_KEYVAULT\", \"backend_azure_keyvault\": { \"resource_id\": \"${bicepDeploymentDetails[keyVaultId]}\", \"dns_name\": \"${bicepDeploymentDetails[keyVaultVaultUri]}\" }, \"initial_manage_principal\": \"users\" }" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" 2>&1 | tee -a $deploymentLogFile)
 
 # Create the Databricks Cluster
 userOutput "STATUS" "Creating the Databricks Workspace Cluster definition..."
@@ -236,14 +236,14 @@ userOutput "STATUS" "Creating the Synapse Workspace Linked Services..."
 
 for synapseLinkedService in '../Azure Synapse Lakehouse Sync/Synapse/Linked Services'/*.json
 do
-    # Parse out the Link Service file and path names
-    synapseLinkedServicePath=${synapseLinkedService%/*}
-    synapseLinkedServiceName=$(basename "${synapseLinkedService}" .json)
+    # Get the Link Service name from the JSON, not the filename
+    synapseLinkedServiceName=$(jq -r .name "${synapseLinkedService}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
 
     cp "${synapseLinkedService}" "${synapseLinkedService}.tmp" 2>&1
     sed -i "s|REPLACE_DATABRICKS_WORKSPACE_URL|https://${bicepDeploymentDetails[databricksWorkspaceUrl]}|g" "${synapseLinkedService}.tmp"
     sed -i "s|REPLACE_DATABRICKS_WORKSPACE_ID|${bicepDeploymentDetails[databricksWorkspaceId]}|g" "${synapseLinkedService}.tmp"
     sed -i "s|REPLACE_DATABRICKS_CLUSTER_ID|${createDatabricksCluster}|g" "${synapseLinkedService}.tmp"
+    sed -i "s|REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME|${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}|g" "${synapseLinkedService}.tmp"
 
     createLinkedService=$(az synapse linked-service create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseLinkedServiceName}" --file @"${synapseLinkedService}.tmp" 2>&1 | tee -a $deploymentLogFile)
     rm "${synapseLinkedService}.tmp"
@@ -257,11 +257,10 @@ userOutput "STATUS" "Creating the Synapse Workspace Datasets..."
 
 for synapseDataSet in '../Azure Synapse Lakehouse Sync/Synapse/Datasets'/*.json
 do
-    # Parse out the Dataset file and path names
-    synapseDataSetPath=${synapseDataSet%/*}
-    synapseDataSeteName=$(basename "${synapseDataSet}" .json)
+    # Get the Dataset name from the JSON, not the filename
+    synapseDataSetName=$(jq -r .name "${synapseDataSet}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
 
-    createDataSet=$(az synapse dataset create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseDataSeteName}" --file @"${synapseDataSet}" 2>&1 | tee -a $deploymentLogFile)
+    createDataSet=$(az synapse dataset create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseDataSetName}" --file @"${synapseDataSet}" 2>&1 | tee -a $deploymentLogFile)
 done
 
 ################################################################################
@@ -272,11 +271,12 @@ userOutput "STATUS" "Creating the Synapse Lakehouse Sync Pipelines..."
 
 for synapsePipeline in '../Azure Synapse Lakehouse Sync/Synapse/Pipelines'/*.json
 do
-    # Parse out the Pipeline file and path names
-    synapsePipelineName=$(jq -r .name "${synapsePipeline}" 2>&1 | sed 's/[[:space:]]*//g')
+    # Get the Pipeline name from the JSON, not the filename
+    synapsePipelineName=$(jq -r .name "${synapsePipeline}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
 
     cp "${synapsePipeline}" "${synapsePipeline}.tmp" 2>&1
-    sed -i "s|REPLACE_DATALAKE_NAME|${bicepDeploymentDetails[datalakeName]}|g" "${synapsePipeline}.tmp"
+    sed -i "s|REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME|${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}|g" "${synapsePipeline}.tmp"
+    sed -i "s|REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME|${bicepDeploymentDetails[synapseStorageAccountName]}|g" "${synapsePipeline}.tmp"
     sed -i "s|REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME|${bicepDeploymentDetails[synapseSQLPoolName]}|g" "${synapsePipeline}.tmp"
 
     createLinkedService=$(az synapse pipeline create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapsePipelineName}" --file @"${synapsePipeline}.tmp" 2>&1 | tee -a $deploymentLogFile)
@@ -289,24 +289,26 @@ done
 
 # Generate a SAS for the data lake so we can upload some files
 tomorrowsDate=$(date --date="tomorrow" +%Y-%m-%d)
-destinationStorageSAS=$(az storage container generate-sas --account-name ${bicepDeploymentDetails[datalakeName]} --name data --permissions rwal --expiry ${tomorrowsDate} --only-show-errors --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+synapseStorageAccountSAS=$(az storage container generate-sas --account-name ${bicepDeploymentDetails[synapseStorageAccountName]} --name synapsesync --permissions rwal --expiry ${tomorrowsDate} --only-show-errors --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+enterpriseDataLakeStorageAccountSAS=$(az storage container generate-sas --account-name ${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]} --name gold --permissions rwal --expiry ${tomorrowsDate} --only-show-errors --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 sampleDataStorageSAS="?sv=2021-06-08&st=2022-08-01T04%3A00%3A00Z&se=2023-08-01T04%3A00%3A00Z&sr=c&sp=rl&sig=DjC4dPo5AKYkNFplik2v6sH%2Fjhl2k1WTzna%2F1eV%2BFv0%3D"
 
 # Copy sample data
 userOutput "STATUS" "Copying the sample data..."
-sampleDataCopy=$(az storage copy -s "https://synapseanalyticspocdata.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_changes/${sampleDataStorageSAS}" -d "https://${bicepDeploymentDetails[datalakeName]}.blob.core.windows.net/data/Sample?${destinationStorageSAS}" --recursive 2>&1 >> $deploymentLogFile)
-sampleDataCopy=$(az storage copy -s "https://synapseanalyticspocdata.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_parquet/${sampleDataStorageSAS}" -d "https://${bicepDeploymentDetails[datalakeName]}.blob.core.windows.net/data/Sample?${destinationStorageSAS}" --recursive 2>&1 >> $deploymentLogFile)
+sampleDataCopy=$(az storage copy -s "https://synapseanalyticspocdata.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_changes/${sampleDataStorageSAS}" -d "https://${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}.blob.core.windows.net/gold/Sample?${enterpriseDataLakeStorageAccountSAS}" --recursive 2>&1 >> $deploymentLogFile)
+sampleDataCopy=$(az storage copy -s "https://synapseanalyticspocdata.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_parquet/${sampleDataStorageSAS}" -d "https://${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}.blob.core.windows.net/gold/Sample?${enterpriseDataLakeStorageAccountSAS}" --recursive 2>&1 >> $deploymentLogFile)
 
 # Update the Auto Loader Metadata file template with the correct storage account and then upload it
-sed -i "s/REPLACE_DATALAKE_NAME/${bicepDeploymentDetails[datalakeName]}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
-sampleDataCopy=$(az storage copy -s "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv" -d "https://${bicepDeploymentDetails[datalakeName]}.blob.core.windows.net/data?${destinationStorageSAS}" 2>&1 >> $deploymentLogFile)
+sed -i "s/REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sampleDataCopy=$(az storage copy -s "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv" -d "https://${bicepDeploymentDetails[synapseStorageAccountName]}.blob.core.windows.net/synapsesync?${synapseStorageAccountSAS}" 2>&1 >> $deploymentLogFile)
 
 # Display the deployment details to the user
 userOutput "DEPLOYMENT" "Deployment:" "Complete"
 userOutput "RESULT" "Resource Group:" ${bicepDeploymentDetails[resourceGroup]}
 userOutput "RESULT" "Synapse Analytics Workspace Name:" ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}
 userOutput "RESULT" "Synapse Analytics SQL Admin:" ${bicepDeploymentDetails[synapseSQLAdministratorLogin]}
+userOutput "RESULT" "Synapse Analytics Storage Account Name:" ${bicepDeploymentDetails[synapseStorageAccountName]}
+userOutput "RESULT" "Enterprise Data Lake Storage Account Name:" ${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}
 userOutput "RESULT" "Databricks Workspace Name:" ${bicepDeploymentDetails[databricksWorkspaceName]}
-userOutput "RESULT" "Data Lake Name:" ${bicepDeploymentDetails[datalakeName]}
 userOutput "RESULT" "Synapse Analytics Workspace:" "https://web.azuresynapse.net"
 userOutput "RESULT" "Databricks Workspace:" "https://${bicepDeploymentDetails[databricksWorkspaceUrl]}"

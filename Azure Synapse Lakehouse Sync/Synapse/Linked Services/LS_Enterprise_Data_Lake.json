@@ -1,0 +1,14 @@
+{
+    "name": "Enterprise Data Lake",
+    "properties": {
+        "annotations": [],
+        "type": "AzureBlobFS",
+        "typeProperties": {
+            "url": "https://REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME.dfs.core.windows.net/"
+        },
+        "connectVia": {
+            "referenceName": "AutoResolveIntegrationRuntime",
+            "type": "IntegrationRuntimeReference"
+        }
+    }
+}

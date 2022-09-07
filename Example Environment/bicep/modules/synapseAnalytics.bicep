@@ -53,7 +53,7 @@ resource synapseAnalyticsWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
 // Azure Databricks Permissions: Give the Synapse Analytics Workspace Managed Identity permissions to Azure Databricks
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
 resource synapseDatabricksWorkspacePermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
-  name: guid(databricksWorkspace.id, subscription().subscriptionId, 'Contributor')
+  name: guid(databricksWorkspace.id, subscription().subscriptionId, 'b24988ac-6180-42a0-ab88-20f7382dd24c')
   scope: databricksWorkspace
   properties: {
     principalId: synapseAnalyticsWorkspace.identity.principalId
@@ -65,7 +65,7 @@ resource synapseDatabricksWorkspacePermissions 'Microsoft.Authorization/roleAssi
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
 resource synapseStorageWorkspacePermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
-  name: guid(synapseAnalyticsWorkspace.id, subscription().subscriptionId, 'Contributor')
+  name: guid(synapseStorageAccount.id, subscription().subscriptionId, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
   scope: synapseStorageAccount
   properties: {
     principalId: synapseAnalyticsWorkspace.identity.principalId
@@ -77,7 +77,7 @@ resource synapseStorageWorkspacePermissions 'Microsoft.Authorization/roleAssignm
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
 resource enterpriseDataLakeWorkspacePermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
-  name: guid(synapseAnalyticsWorkspace.id, subscription().subscriptionId, 'Contributor')
+  name: guid(enterpriseDataLakeStorageAccount.id, subscription().subscriptionId, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
   scope: enterpriseDataLakeStorageAccount
   properties: {
     principalId: synapseAnalyticsWorkspace.identity.principalId
@@ -89,7 +89,7 @@ resource enterpriseDataLakeWorkspacePermissions 'Microsoft.Authorization/roleAss
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
 resource synapseStorageAzureADAdminPermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
-  name: guid(synapseAnalyticsWorkspace.id, synapseAzureADAdminObjectId, 'Contributor')
+  name: guid(synapseStorageAccount.id, synapseAzureADAdminObjectId, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
   scope: synapseStorageAccount
   properties: {
     principalId: synapseAzureADAdminObjectId
@@ -101,7 +101,7 @@ resource synapseStorageAzureADAdminPermissions 'Microsoft.Authorization/roleAssi
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
 resource enterpriseDataLakeAzureADAdminPermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
-  name: guid(synapseAnalyticsWorkspace.id, synapseAzureADAdminObjectId, 'Contributor')
+  name: guid(enterpriseDataLakeStorageAccount.id, synapseAzureADAdminObjectId, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
   scope: enterpriseDataLakeStorageAccount
   properties: {
     principalId: synapseAzureADAdminObjectId

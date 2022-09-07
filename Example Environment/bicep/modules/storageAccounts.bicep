@@ -73,3 +73,4 @@ resource enterprieDataLakeGoldStorageContainer 'Microsoft.Storage/storageAccount
 }
 
 output synapseStorageAccountName string = synapseStorageAccount.name
+output enterpriseDataLakeStorageAccountName string = enterpriseDataLakeStorageAccount.name

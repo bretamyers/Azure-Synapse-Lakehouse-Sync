@@ -44,8 +44,8 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-01-01' = {
 }
 
 // Create the Azure Data Lake Storage Gen2 Account
-module synapseStorageAccount 'modules/storageAccount.bicep' = {
-  name: 'storageAccount'
+module storageAccounts 'modules/storageAccounts.bicep' = {
+  name: 'storageAccounts'
   scope: resourceGroup
   params: {
     resourceSuffix: resourceSuffix
@@ -64,7 +64,7 @@ module keyVault 'modules/keyVault.bicep' = {
   }
 
   dependsOn: [
-    synapseStorageAccount
+    storageAccounts
   ]
 }
 
@@ -82,7 +82,7 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
   }
 
   dependsOn: [
-    synapseStorageAccount
+    storageAccounts
     databricksWorkspace
   ]
 }
@@ -97,19 +97,20 @@ module databricksWorkspace 'modules/databricksWorkspace.bicep' = {
   }
 
   dependsOn: [
-    synapseStorageAccount
+    storageAccounts
   ]
 }
 
 // Outputs for reference in the deploySynapseSync.sh Post-Deployment Configuration
 output resourceGroup string = resourceGroup.name
 output synapseAnalyticsWorkspaceName string = synapseAnalytics.outputs.synapseAnalyticsWorkspaceName
+output synapseStorageAccountName string = storageAccounts.outputs.synapseStorageAccountName
+output enterpriseDataLakeStorageAccountName string = storageAccounts.outputs.enterpriseDataLakeStorageAccountName
 output synapseSQLPoolName string = synapseSQLPoolName
 output synapseSQLAdministratorLogin string = synapseSQLAdministratorLogin
 output databricksWorkspaceName string = databricksWorkspace.outputs.databricksWorkspaceName
 output databricksWorkspaceUrl string = databricksWorkspace.outputs.databricksWorkspaceUrl
 output databricksWorkspaceId string = databricksWorkspace.outputs.databricksWorkspaceId
-output datalakeName string = synapseStorageAccount.outputs.synapseStorageAccountName
 output keyVaultName string = keyVault.outputs.keyVaultName
 output keyVaultVaultUri string = keyVault.outputs.keyVaultVaultUri
 output keyVaultId string = keyVault.outputs.keyVaultId
