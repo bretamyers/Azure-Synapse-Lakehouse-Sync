@@ -16,9 +16,14 @@ param synapseSQLAdministratorLogin string
 param synapseSQLAdministratorLoginPassword string
 param synapseAzureADAdminObjectId string
 
-// Reference to the Storage Account we created
+// Reference to the Synapse Workspace Storage Account we created
 resource synapseStorageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' existing = {
   name: 'synapsesync${resourceSuffix}'
+}
+
+// Reference to the Enterprise Data Lake Storage Account we created
+resource enterpriseDataLakeStorageAccount 'Microsoft.Storage/storageAccounts@2019-06-01' existing = {
+  name: 'enterprisedatalake${resourceSuffix}'
 }
 
 // Reference to the Databricks workspace we created
@@ -38,7 +43,7 @@ resource synapseAnalyticsWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
   properties: {
     defaultDataLakeStorage: {
       accountUrl: synapseStorageAccount.properties.primaryEndpoints.dfs
-      filesystem: 'config'
+      filesystem: 'workspace'
     }
     sqlAdministratorLogin: synapseSQLAdministratorLogin
     sqlAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
@@ -56,7 +61,7 @@ resource synapseDatabricksWorkspacePermissions 'Microsoft.Authorization/roleAssi
   }
 }
 
-// Azure Data Lake Storage Gen2 Permissions: Give the Synapse Analytics Workspace Managed Identity permissions to Azure Data Lake Storage Gen2
+// Azure Data Lake Storage Gen2 Permissions: Give the Synapse Analytics Workspace Managed Identity permissions to the Synapse Workspace storage account
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
 resource synapseStorageWorkspacePermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
@@ -68,12 +73,36 @@ resource synapseStorageWorkspacePermissions 'Microsoft.Authorization/roleAssignm
   }
 }
 
-// Azure Data Lake Storage Gen2 Permissions: Give the Synapse Analytics Azure AD Admin user permissions to Azure Data Lake Storage Gen2
+// Azure Data Lake Storage Gen2 Permissions: Give the Synapse Analytics Workspace Managed Identity permissions to the Enterprise Data Lake storage account
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
+resource enterpriseDataLakeWorkspacePermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
+  name: guid(synapseAnalyticsWorkspace.id, subscription().subscriptionId, 'Contributor')
+  scope: enterpriseDataLakeStorageAccount
+  properties: {
+    principalId: synapseAnalyticsWorkspace.identity.principalId
+    roleDefinitionId: '/providers/Microsoft.Authorization/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+  }
+}
+
+// Azure Data Lake Storage Gen2 Permissions: Give the Synapse Analytics Azure AD Admin user permissions to the Synapse Workspace storage account
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
 resource synapseStorageAzureADAdminPermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
   name: guid(synapseAnalyticsWorkspace.id, synapseAzureADAdminObjectId, 'Contributor')
   scope: synapseStorageAccount
+  properties: {
+    principalId: synapseAzureADAdminObjectId
+    roleDefinitionId: '/providers/Microsoft.Authorization/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+  }
+}
+
+// Azure Data Lake Storage Gen2 Permissions: Give the Synapse Analytics Azure AD Admin user permissions to the Enterprise Data Lake storage account
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/how-to-grant-workspace-managed-identity-permissions
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
+resource enterpriseDataLakeAzureADAdminPermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
+  name: guid(synapseAnalyticsWorkspace.id, synapseAzureADAdminObjectId, 'Contributor')
+  scope: enterpriseDataLakeStorageAccount
   properties: {
     principalId: synapseAzureADAdminObjectId
     roleDefinitionId: '/providers/Microsoft.Authorization/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe'

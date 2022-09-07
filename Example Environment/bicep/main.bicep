@@ -60,6 +60,7 @@ module keyVault 'modules/keyVault.bicep' = {
   params: {
     resourceSuffix: resourceSuffix
     azureRegion: azureRegion
+    synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
   }
 
   dependsOn: [
