@@ -53,7 +53,7 @@ checkKeyVaultDeploymentState () {
 
     if [[ ! "${keyVaultName}" == *"DeploymentNotFound"* ]] && [ ! "${keyVaultName}" = "" ]; then
         if [ "${keyVaultState}" = "${keyVaultName}" ]; then
-            echo "DeletedNotPurged"
+            echo "DeletedNotPurged" "${keyVaultName}"
         else
             echo "NotDeletedNotPurged"
         fi
@@ -122,8 +122,9 @@ userOutput "RESULT" "Azure AD User Object Id:" ${accountDetails[azureUsernameObj
 sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${accountDetails[azureUsernameObjectId]}/g" bicep/main.parameters.json 2>&1
 
 # Make sure Azure Key Vault was not deleted but also not purged. Bicep will throw an error if it's in the purged state.
-if [ $(checkKeyVaultDeploymentState) = "DeletedNotPurged" ]; then
-    userOutput "ERROR" "Azure Key Vault was previously created by this deployment and deleted, but not purged. You must manually purge the previous Key Vault via 'az keyvault purge' before it can be deployed again."
+read keyVaultState keyVaultName < <(checkKeyVaultDeploymentState)
+if [ "${keyVaultState}" = "DeletedNotPurged" ]; then
+    userOutput "ERROR" "Azure Key Vault was previously created by this deployment and deleted, but not purged. You must manually purge the previous Key Vault via 'az keyvault purge --name ${keyVaultName}' before it can be deployed again."
     exit 1;
 fi
 
