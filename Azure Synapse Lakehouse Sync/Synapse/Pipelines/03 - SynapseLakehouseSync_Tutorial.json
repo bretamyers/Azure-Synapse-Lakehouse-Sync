@@ -88,7 +88,7 @@
                     "notebookPath": "/Synapse Lakehouse Sync Tutorial/Simulate Data Changes - AdventureWorks",
                     "baseParameters": {
                         "SynapseLakehouseSyncParameters": {
-                            "value": "@concat('{\"DatabaseName\":\"AdventureWorks\", \"SynapseWorkspaceName\":\"', pipeline().DataFactory\n, '\", \"ParquetDataADLSFullPath\":\"abfss://data@synapsesynccav.dfs.core.windows.net/Sample/\", \"ParquetDataDatabricksKeyVaultScope\":\"DataLakeStorageKey\", \"ParquetDataAzureKeyVaultSecretName\":\"DataLakeStorageKey\"}')",
+                            "value": "@concat('{\"DatabaseName\":\"AdventureWorks\", \"SynapseWorkspaceName\":\"', pipeline().DataFactory\n, '\", \"ParquetDataADLSFullPath\":\"abfss://data@synapsesynccav.dfs.core.windows.net/Sample/\"\n, \"ParquetDataDatabricksKeyVaultScope\":\"AzureKeyVaultScope\"\n, \"ParquetDataAzureKeyVaultSecretName\":\"EnterpriseDataLakeAccountKey\"}'\n)",
                             "type": "Expression"
                         }
                     }
