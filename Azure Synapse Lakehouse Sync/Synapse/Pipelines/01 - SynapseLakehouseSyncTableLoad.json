@@ -1,15 +1,17 @@
 {
     "name": "SynapseLakehouseSyncTableLoad",
     "properties": {
+        "description": "The pipeline that orchestrates the staging and loading of the data from the delta change data feed to the Synapse dedicate pool tables.",
         "activities": [
             {
                 "name": "Filter - Deletes",
+                "description": "Filter ChangeTypesArray parameter to tables that have delete as a change type.",
                 "type": "Filter",
                 "dependsOn": [],
                 "userProperties": [],
                 "typeProperties": {
                     "items": {
-                        "value": "@pipeline().parameters.ChangeTypesArray",
+                        "value": "@pipeline().parameters.DatabricksOutput['ChangeTypes']",
                         "type": "Expression"
                     },
                     "condition": {
@@ -20,12 +22,13 @@
             },
             {
                 "name": "Filter - Update",
+                "description": "Filter ChangeTypesArray parameter to tables that have updates as a change type.",
                 "type": "Filter",
                 "dependsOn": [],
                 "userProperties": [],
                 "typeProperties": {
                     "items": {
-                        "value": "@pipeline().parameters.ChangeTypesArray",
+                        "value": "@pipeline().parameters.DatabricksOutput['ChangeTypes']",
                         "type": "Expression"
                     },
                     "condition": {
@@ -36,12 +39,13 @@
             },
             {
                 "name": "Filter - Insert",
+                "description": "Filter ChangeTypesArray parameter to tables that have insert as a change type.",
                 "type": "Filter",
                 "dependsOn": [],
                 "userProperties": [],
                 "typeProperties": {
                     "items": {
-                        "value": "@pipeline().parameters.ChangeTypesArray",
+                        "value": "@pipeline().parameters.DatabricksOutput['ChangeTypes']",
                         "type": "Expression"
                     },
                     "condition": {
@@ -52,12 +56,13 @@
             },
             {
                 "name": "Filter - Full Load",
+                "description": "Loop through tables that had full_load changes to the records.",
                 "type": "Filter",
                 "dependsOn": [],
                 "userProperties": [],
                 "typeProperties": {
                     "items": {
-                        "value": "@pipeline().parameters.ChangeTypesArray",
+                        "value": "@pipeline().parameters.DatabricksOutput['ChangeTypes']",
                         "type": "Expression"
                     },
                     "condition": {
@@ -68,6 +73,7 @@
             },
             {
                 "name": "ForEach - Pool - Deletes",
+                "description": "Loop through tables that had delete changes to the records. The pipeline is at the table grain already but the loop is a way to separate and wrap the different steps.",
                 "type": "ForEach",
                 "dependsOn": [
                     {
@@ -98,6 +104,7 @@
                     "activities": [
                         {
                             "name": "Get Resource Class Required",
+                            "description": "Profile the data that was loaded into the staging table and get determine the minimum static resource that should be used to load the data.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -119,7 +126,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_delete'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
+                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.DatabricksOutput['SchemaName'])\n, '{TableNameStaging}', concat(pipeline().parameters.DatabricksOutput['TableName'], '_delete'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -134,7 +141,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -144,6 +151,7 @@
                         },
                         {
                             "name": "Create Staging Table DDL - Serverless",
+                            "description": "Profile the data using the Synapse serverless engine and generate the optimal table DDL.",
                             "type": "Lookup",
                             "dependsOn": [],
                             "policy": {
@@ -158,7 +166,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_delete'))\n,  '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName, '/_change_type=delete'))",
+                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.DatabricksOutput['SchemaName'])\n, '{TableNameStaging}', concat(pipeline().parameters.DatabricksOutput['TableName'], '_delete'))\n,  '{FolderPathFull}', concat(pipeline().parameters.DatabricksOutput['SynapseSync_https'], '/', pipeline().parameters.DatabricksOutput['SynapseWorkspaceName'], '_', pipeline().parameters.DatabricksOutput['PoolName'], '_SynapseLakehouseSync/', pipeline().parameters.DatabricksOutput['SchemaName'], '/', pipeline().parameters.DatabricksOutput['TableName'], '/_change_type=delete'))",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -180,6 +188,7 @@
                         },
                         {
                             "name": "Create Staging Tables",
+                            "description": "Execute the DDL for the creation of the staging table from the previous step in the Synapse dedicated pool.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -216,7 +225,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -226,6 +235,7 @@
                         },
                         {
                             "name": "Execute COPY INTO Staging Statement",
+                            "description": "Execute the COPY INTO statement to move the data from ADLS to the newly created staging table.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -247,7 +257,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_delete'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName\n, '/_change_type=delete'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_delete', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
+                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '_delete'\n, '] FROM '''\n, pipeline().parameters.DatabricksOutput['SynapseSync_https'], '/', pipeline().parameters.DatabricksOutput['SynapseWorkspaceName'], '_', pipeline().parameters.DatabricksOutput['PoolName'], '_SynapseLakehouseSync/', pipeline().parameters.DatabricksOutput['SchemaName'], '/', pipeline().parameters.DatabricksOutput['TableName']\n, '/_change_type=delete'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '_delete', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -262,7 +272,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -272,6 +282,7 @@
                         },
                         {
                             "name": "Script - Delete",
+                            "description": "Execute the delete statement on the final table from the data that was staged.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -293,7 +304,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(replace(variables('sqlDelete')\n,'{SchemaName}', pipeline().parameters.SchemaName)\n,'{TableName}', pipeline().parameters.TableName)\n,'{UserName}', activity('Get Resource Class Required').output.firstRow.UserName)\n,'{KeyColumns}', pipeline().parameters.KeyColumns)\n,' SELECT 1 AS a'\n)",
+                                        "value": "@concat(replace(replace(replace(replace(variables('sqlDelete')\n,'{SchemaName}', pipeline().parameters.DatabricksOutput['SchemaName'])\n,'{TableName}', pipeline().parameters.DatabricksOutput['TableName'])\n,'{UserName}', activity('Get Resource Class Required').output.firstRow.UserName)\n,'{KeyColumns}', pipeline().parameters.DatabricksOutput['KeyColumns'])\n,' SELECT 1 AS a'\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -308,7 +319,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -321,6 +332,7 @@
             },
             {
                 "name": "ForEach - Pool - Updates",
+                "description": "Loop through tables that had update changes to the records. The pipeline is at the table grain already but the loop is a way to separate and wrap the different steps.",
                 "type": "ForEach",
                 "dependsOn": [
                     {
@@ -339,6 +351,7 @@
                     "activities": [
                         {
                             "name": "Get Resource Class Required - Update",
+                            "description": "Profile the data that was loaded into the staging table and get determine the minimum static resource that should be used to load the data.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -366,7 +379,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_update'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
+                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.DatabricksOutput['SchemaName'])\n, '{TableNameStaging}', concat(pipeline().parameters.DatabricksOutput['TableName'], '_update'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -381,7 +394,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -391,6 +404,7 @@
                         },
                         {
                             "name": "Create Staging Table DDL - Serverless - Update",
+                            "description": "Profile the data using the Synapse serverless engine and generate the optimal table DDL.",
                             "type": "Lookup",
                             "dependsOn": [],
                             "policy": {
@@ -405,7 +419,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_update'))\n,  '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName, '/_change_type=update_postimage'))\n",
+                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.DatabricksOutput['SchemaName'])\n, '{TableNameStaging}', concat(pipeline().parameters.DatabricksOutput['TableName'], '_update'))\n,  '{FolderPathFull}', concat(pipeline().parameters.DatabricksOutput['SynapseSync_https'], '/', pipeline().parameters.DatabricksOutput['SynapseWorkspaceName'], '_', pipeline().parameters.DatabricksOutput['PoolName'], '_SynapseLakehouseSync/', pipeline().parameters.DatabricksOutput['SchemaName'], '/', pipeline().parameters.DatabricksOutput['TableName'], '/_change_type=update_postimage'))\n",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -427,6 +441,7 @@
                         },
                         {
                             "name": "Create Staging Tables - Update",
+                            "description": "Execute the DDL for the creation of the staging table from the previous step in the Synapse dedicated pool.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -463,7 +478,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -473,6 +488,7 @@
                         },
                         {
                             "name": "Execute COPY INTO Staging Statement - Update",
+                            "description": "Execute the COPY INTO statement to move the data from ADLS to the newly created staging table.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -494,7 +510,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_update'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName\n, '/_change_type=update_postimage'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_update', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
+                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '_update'\n, '] FROM '''\n, pipeline().parameters.DatabricksOutput['SynapseSync_https'], '/', pipeline().parameters.DatabricksOutput['SynapseWorkspaceName'], '_', pipeline().parameters.DatabricksOutput['PoolName'], '_SynapseLakehouseSync/', pipeline().parameters.DatabricksOutput['SchemaName'], '/', pipeline().parameters.DatabricksOutput['TableName']\n, '/_change_type=update_postimage'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '_update', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -509,7 +525,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -519,6 +535,7 @@
                         },
                         {
                             "name": "Script - Update",
+                            "description": "Execute the update statement on the final table from the data that was staged.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -540,7 +557,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(replace(variables('sqlUpdate')\n,'{SchemaName}', pipeline().parameters.SchemaName)\n,'{TableName}', pipeline().parameters.TableName)\n,'{KeyColumns}', pipeline().parameters.KeyColumns)\n,'{UserName}', activity('Get Resource Class Required - Update').output.firstRow.UserName)\n,' SELECT 1 AS a'\n)",
+                                        "value": "@concat(replace(replace(replace(replace(variables('sqlUpdate')\n,'{SchemaName}', pipeline().parameters.DatabricksOutput['SchemaName'])\n,'{TableName}', pipeline().parameters.DatabricksOutput['TableName'])\n,'{KeyColumns}', pipeline().parameters.DatabricksOutput['KeyColumns'])\n,'{UserName}', activity('Get Resource Class Required - Update').output.firstRow.UserName)\n,' SELECT 1 AS a'\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -555,7 +572,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -565,6 +582,7 @@
                         },
                         {
                             "name": "Alter Base Tables Column Data Types - Update",
+                            "description": "Update the final tables data types for the column if the data staged has a larger datatype defined. For example, the final table has varchar(10) but the staging table has varchar(20). We then alter the final table to be varchar(20).",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -586,7 +604,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('sqlAlterColumn')\n, '{SchemaName}', pipeline().parameters.SchemaName)\n, '{TableNameBase}', pipeline().parameters.TableName)\n, '{TableNameStage}', concat(pipeline().parameters.TableName, '_update'))\n, '; SELECT 1 AS a')\n",
+                                        "value": "@concat(replace(replace(replace(variables('sqlAlterColumn')\n, '{SchemaName}', pipeline().parameters.DatabricksOutput['SchemaName'])\n, '{TableNameBase}', pipeline().parameters.DatabricksOutput['TableName'])\n, '{TableNameStage}', concat(pipeline().parameters.DatabricksOutput['TableName'], '_update'))\n, '; SELECT 1 AS a')\n",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -601,7 +619,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -614,6 +632,7 @@
             },
             {
                 "name": "ForEach - Pool - Inserts",
+                "description": "Loop through tables that had insert changes to the records. The pipeline is at the table grain already but the loop is a way to separate and wrap the different steps.",
                 "type": "ForEach",
                 "dependsOn": [
                     {
@@ -632,6 +651,7 @@
                     "activities": [
                         {
                             "name": "Get Resource Class Required - Insert",
+                            "description": "Profile the data that was loaded into the staging table and get determine the minimum static resource that should be used to load the data.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -659,7 +679,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_insert'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
+                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.DatabricksOutput['SchemaName'])\n, '{TableNameStaging}', concat(pipeline().parameters.DatabricksOutput['TableName'], '_insert'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -674,7 +694,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -684,6 +704,7 @@
                         },
                         {
                             "name": "Create Staging Table DDL - Serverless - Insert",
+                            "description": "Profile the data using the Synapse serverless engine and generate the optimal table DDL.",
                             "type": "Lookup",
                             "dependsOn": [],
                             "policy": {
@@ -698,7 +719,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_insert'))\n, '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName, '/_change_type=insert'))",
+                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.DatabricksOutput['SchemaName'])\n, '{TableNameStaging}', concat(pipeline().parameters.DatabricksOutput['TableName'], '_insert'))\n, '{FolderPathFull}', concat(pipeline().parameters.DatabricksOutput['SynapseSync_https'], '/', pipeline().parameters.DatabricksOutput['SynapseWorkspaceName'], '_', pipeline().parameters.DatabricksOutput['PoolName'], '_SynapseLakehouseSync/', pipeline().parameters.DatabricksOutput['SchemaName'], '/', pipeline().parameters.DatabricksOutput['TableName'], '/_change_type=insert'))",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -720,6 +741,7 @@
                         },
                         {
                             "name": "Create Staging Tables - Insert",
+                            "description": "Execute the DDL for the creation of the staging table from the previous step in the Synapse dedicated pool.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -756,7 +778,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -766,6 +788,7 @@
                         },
                         {
                             "name": "Execute COPY INTO Staging Statement - Insert",
+                            "description": "Execute the COPY INTO statement to move the data from ADLS to the newly created staging table.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -787,7 +810,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_insert'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName\n, '/_change_type=insert'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_insert', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
+                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '_insert'\n, '] FROM '''\n, pipeline().parameters.DatabricksOutput['SynapseSync_https'], '/', pipeline().parameters.DatabricksOutput['SynapseWorkspaceName'], '_', pipeline().parameters.DatabricksOutput['PoolName'], '_SynapseLakehouseSync/', pipeline().parameters.DatabricksOutput['SchemaName'], '/', pipeline().parameters.DatabricksOutput['TableName']\n, '/_change_type=insert'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '_insert', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -802,7 +825,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -812,6 +835,7 @@
                         },
                         {
                             "name": "Script - Insert",
+                            "description": "Execute the insert statement on the final table from the data that was staged.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -833,7 +857,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(replace(variables('sqlInsert')\n,'{SchemaName}', pipeline().parameters.SchemaName)\n,'{TableName}', pipeline().parameters.TableName)\n,'{KeyColumns}', pipeline().parameters.KeyColumns)\n,'{UserName}', activity('Get Resource Class Required - Insert').output.firstRow.UserName)\n,' SELECT 1 AS a'\n)\n",
+                                        "value": "@concat(replace(replace(replace(replace(variables('sqlInsert')\n,'{SchemaName}', pipeline().parameters.DatabricksOutput['SchemaName'])\n,'{TableName}', pipeline().parameters.DatabricksOutput['TableName'])\n,'{KeyColumns}', pipeline().parameters.DatabricksOutput['KeyColumns'])\n,'{UserName}', activity('Get Resource Class Required - Insert').output.firstRow.UserName)\n,' SELECT 1 AS a'\n)\n",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -848,7 +872,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -879,7 +903,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('sqlAlterColumn')\n, '{SchemaName}', pipeline().parameters.SchemaName)\n, '{TableNameBase}', pipeline().parameters.TableName)\n, '{TableNameStage}', concat(pipeline().parameters.TableName, '_insert'))\n, '; SELECT 1 AS a')\n",
+                                        "value": "@concat(replace(replace(replace(variables('sqlAlterColumn')\n, '{SchemaName}', pipeline().parameters.DatabricksOutput['SchemaName'])\n, '{TableNameBase}', pipeline().parameters.DatabricksOutput['TableName'])\n, '{TableNameStage}', concat(pipeline().parameters.DatabricksOutput['TableName'], '_insert'))\n, '; SELECT 1 AS a')\n",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -894,7 +918,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -907,6 +931,7 @@
             },
             {
                 "name": "ForEach - Create and Load the Synapse Table",
+                "description": "Loop through tables that had full_load changes to the records. The pipeline is at the table grain already but the loop is a way to separate and wrap the different steps.",
                 "type": "ForEach",
                 "dependsOn": [
                     {
@@ -926,6 +951,7 @@
                     "activities": [
                         {
                             "name": "Get Resource Class Required - Full Load",
+                            "description": "Profile the data that was loaded into the staging table and get determine the minimum static resource that should be used to load the data.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -947,7 +973,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_full_load'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
+                                        "value": "@concat(replace(replace(replace(variables('GetResourceClass')\n, '{SchemaNameStaging}', pipeline().parameters.DatabricksOutput['SchemaName'])\n, '{TableNameStaging}', concat(pipeline().parameters.DatabricksOutput['TableName'], '_full_load'))\n, '{PipelineId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -962,7 +988,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -972,15 +998,9 @@
                         },
                         {
                             "name": "Create Staging Table DDL - Serverless - Full Load",
+                            "description": "Profile the data using the Synapse serverless engine and generate the optimal table DDL.",
                             "type": "Lookup",
-                            "dependsOn": [
-                                {
-                                    "activity": "Drop Table if Exists",
-                                    "dependencyConditions": [
-                                        "Succeeded"
-                                    ]
-                                }
-                            ],
+                            "dependsOn": [],
                             "policy": {
                                 "timeout": "7.00:00:00",
                                 "retry": 0,
@@ -993,7 +1013,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_full_load'))\n,  '{FolderPathFull}', concat(pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName, '/_change_type=full_load'))",
+                                        "value": "@replace(replace(replace(variables('SqlCommandCreateStagingTable'), '{SchemaNameStaging}', pipeline().parameters.DatabricksOutput['SchemaName'])\n, '{TableNameStaging}', concat(pipeline().parameters.DatabricksOutput['TableName'], '_full_load'))\n,  '{FolderPathFull}', concat(pipeline().parameters.DatabricksOutput['SynapseSync_https'], '/', pipeline().parameters.DatabricksOutput['SynapseWorkspaceName'], '_', pipeline().parameters.DatabricksOutput['PoolName'], '_SynapseLakehouseSync/', pipeline().parameters.DatabricksOutput['SchemaName'], '/', pipeline().parameters.DatabricksOutput['TableName'], '/_change_type=full_load'))",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -1015,6 +1035,7 @@
                         },
                         {
                             "name": "Create Staging Tables - Full Load",
+                            "description": "Execute the DDL for the creation of the staging table from the previous step in the Synapse dedicated pool.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -1051,7 +1072,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -1061,6 +1082,7 @@
                         },
                         {
                             "name": "Execute COPY INTO Staging Statement - Full Load",
+                            "description": "Execute the COPY INTO statement to move the data from ADLS to the newly created staging table.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -1082,7 +1104,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_full_load'\n, '] FROM '''\n, pipeline().parameters.SynapseSync_https, '/', pipeline().parameters.PoolName, '_SynapseLakehouseSync/', pipeline().parameters.SchemaName, '/', pipeline().parameters.TableName\n, '/_change_type=full_load'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_full_load', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
+                                        "value": "@concat('EXECUTE AS user = ''Userstaticrc10'' COPY INTO ['\n, pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '_full_load'\n, '] FROM '''\n, pipeline().parameters.DatabricksOutput['SynapseSync_https'], '/', pipeline().parameters.DatabricksOutput['SynapseWorkspaceName'], '_', pipeline().parameters.DatabricksOutput['PoolName'], '_SynapseLakehouseSync/', pipeline().parameters.DatabricksOutput['SchemaName'], '/', pipeline().parameters.DatabricksOutput['TableName']\n, '/_change_type=full_load'\n, ''' WITH ( FILE_TYPE = ''PARQUET'', MAXERRORS = 0, COMPRESSION = ''snappy'', IDENTITY_INSERT = ''OFF'', CREDENTIAL = (IDENTITY = ''Managed Identity'')) OPTION (LABEL = ''COPY - ['\n, pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '_full_load', '] - '\n, pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -1097,7 +1119,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -1107,7 +1129,7 @@
                         },
                         {
                             "name": "Profile Staging Table",
-                            "description": "Profile the staging table and try to determine the best distribution.",
+                            "description": "Profile the staging table and try to determine the best distribution and index.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -1129,7 +1151,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat(replace(replace(replace(replace(replace(replace(replace(variables('CTAS')\n\t, '{ResourceClassName}', activity('Get Resource Class Required - Full Load').output.firstRow.UserName)\n\t, '{SchemaNameStaging}', pipeline().parameters.SchemaName)\n\t, '{TableNameStaging}', concat(pipeline().parameters.TableName, '_full_load'))\n\t, '{TableNameFinal}', pipeline().parameters.TableName)\n\t, '{PipelineRunId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n\t, '{PipelineStartDate}', pipeline().parameters.PipelineValue[0].PipelineStartDate)\n\t, '{PipelineStartDateTime}', pipeline().parameters.PipelineValue[0].PipelineStartDateTime)\n)",
+                                        "value": "@concat(replace(replace(replace(replace(replace(replace(replace(variables('CTAS')\n\t, '{ResourceClassName}', activity('Get Resource Class Required - Full Load').output.firstRow.UserName)\n\t, '{SchemaNameStaging}', pipeline().parameters.DatabricksOutput['SchemaName'])\n\t, '{TableNameStaging}', concat(pipeline().parameters.DatabricksOutput['TableName'], '_full_load'))\n\t, '{TableNameFinal}', pipeline().parameters.DatabricksOutput['TableName'])\n\t, '{PipelineRunId}', pipeline().parameters.PipelineValue[0].PipelineRunId)\n\t, '{PipelineStartDate}', pipeline().parameters.PipelineValue[0].PipelineStartDate)\n\t, '{PipelineStartDateTime}', pipeline().parameters.PipelineValue[0].PipelineStartDateTime)\n)",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -1144,7 +1166,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -1153,6 +1175,54 @@
                         },
                         {
                             "name": "Create Final Tables - Auto Distribution and Index",
+                            "description": "Run the CTAS command to load the data from the staging table to the final table with the appropriate distribution and index defined.",
+                            "type": "Lookup",
+                            "dependsOn": [
+                                {
+                                    "activity": "Drop Table if Exists",
+                                    "dependencyConditions": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            ],
+                            "policy": {
+                                "timeout": "7.00:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "source": {
+                                    "type": "SqlDWSource",
+                                    "sqlReaderQuery": {
+                                        "value": "@CONCAT('/*Auto Distribution/Index*/ EXECUTE AS user = ''', activity('Get Resource Class Required - Full Load').output.firstRow.UserName\n, ''' IF OBJECT_ID(''', pipeline().parameters.DatabricksOutput['SchemaName'], '.', pipeline().parameters.DatabricksOutput['TableName'], ''', ''U'') IS NOT NULL DROP TABLE [', pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName']\n, ']; CREATE TABLE [', pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '] ', activity('Profile Staging Table').output.firstRow.DistributionIndex,' AS SELECT * FROM [', pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '_full_load]  OPTION (LABEL = ''CTAS - [', pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '] - ', pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')\n\n",
+                                        "type": "Expression"
+                                    },
+                                    "queryTimeout": "24:00:00",
+                                    "partitionOption": "None"
+                                },
+                                "dataset": {
+                                    "referenceName": "DS_Synapse_Managed_Identity",
+                                    "type": "DatasetReference",
+                                    "parameters": {
+                                        "ServerName": {
+                                            "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+                                            "type": "Expression"
+                                        },
+                                        "DatabaseName": {
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
+                                            "type": "Expression"
+                                        }
+                                    }
+                                },
+                                "firstRowOnly": false
+                            }
+                        },
+                        {
+                            "name": "Drop Table if Exists",
+                            "description": "Drop the staging table if it exists in Synapse dedicated pool.",
                             "type": "Lookup",
                             "dependsOn": [
                                 {
@@ -1174,7 +1244,7 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@CONCAT('/*Auto Distribution/Index*/ EXECUTE AS user = ''', activity('Get Resource Class Required - Full Load').output.firstRow.UserName\n, ''' IF OBJECT_ID(''', pipeline().parameters.SchemaName, '.', pipeline().parameters.TableName, ''', ''U'') IS NOT NULL DROP TABLE [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName\n, ']; CREATE TABLE [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '] ', activity('Profile Staging Table').output.firstRow.DistributionIndex,' AS SELECT * FROM [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_full_load]  OPTION (LABEL = ''CTAS - [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '] - ', pipeline().parameters.PipelineValue[0].PipelineRunId, ''');SELECT 1 AS a')\n\n",
+                                        "value": "@concat('IF OBJECT_ID(''', pipeline().parameters.DatabricksOutput['SchemaName'], '.', pipeline().parameters.DatabricksOutput['TableName'], ''', ''U'') IS NOT NULL\n\tDROP TABLE [', pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '];'\n, ' SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
                                     "queryTimeout": "24:00:00",
@@ -1189,46 +1259,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
-                                            "type": "Expression"
-                                        }
-                                    }
-                                },
-                                "firstRowOnly": false
-                            }
-                        },
-                        {
-                            "name": "Drop Table if Exists",
-                            "type": "Lookup",
-                            "dependsOn": [],
-                            "policy": {
-                                "timeout": "7.00:00:00",
-                                "retry": 0,
-                                "retryIntervalInSeconds": 30,
-                                "secureOutput": false,
-                                "secureInput": false
-                            },
-                            "userProperties": [],
-                            "typeProperties": {
-                                "source": {
-                                    "type": "SqlDWSource",
-                                    "sqlReaderQuery": {
-                                        "value": "@concat('IF OBJECT_ID(''', pipeline().parameters.SchemaName, '.', pipeline().parameters.TableName, ''', ''U'') IS NOT NULL\n\tDROP TABLE [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '];'\n, ' SELECT 1 AS a')",
-                                        "type": "Expression"
-                                    },
-                                    "queryTimeout": "24:00:00",
-                                    "partitionOption": "None"
-                                },
-                                "dataset": {
-                                    "referenceName": "DS_Synapse_Managed_Identity",
-                                    "type": "DatasetReference",
-                                    "parameters": {
-                                        "ServerName": {
-                                            "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
-                                            "type": "Expression"
-                                        },
-                                        "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -1241,6 +1272,7 @@
             },
             {
                 "name": "ForEach - Drop Temp Tables",
+                "description": "If the DropTableFlag parameter is true, then drop the staging tables that are created during the loading process after the data has been loaded. This will keep the Synapse Dedicated Pool clean.",
                 "type": "ForEach",
                 "dependsOn": [
                     {
@@ -1259,7 +1291,7 @@
                 "userProperties": [],
                 "typeProperties": {
                     "items": {
-                        "value": "@if(pipeline().parameters.DropTableFlag\n, pipeline().parameters.ChangeTypesArray\n, take(array(''), 0)\n)",
+                        "value": "@if(bool(pipeline().parameters.DatabricksOutput['DropTableFlag'])\n, pipeline().parameters.DatabricksOutput['ChangeTypes']\n, take(array(''), 0)\n)",
                         "type": "Expression"
                     },
                     "activities": [
@@ -1279,10 +1311,10 @@
                                 "source": {
                                     "type": "SqlDWSource",
                                     "sqlReaderQuery": {
-                                        "value": "@concat('IF OBJECT_ID(''', pipeline().parameters.SchemaName, '.', pipeline().parameters.TableName, '_', if(equals(item(), 'update_postimage'), 'update', item()), ''', ''U'') IS NOT NULL\n    DROP TABLE [', pipeline().parameters.SchemaName, '].[', pipeline().parameters.TableName, '_', if(equals(item(), 'update_postimage'), 'update', item()), '];'\n, ' SELECT 1 AS a')",
+                                        "value": "@concat('IF OBJECT_ID(''', pipeline().parameters.DatabricksOutput['SchemaName'], '.', pipeline().parameters.DatabricksOutput['TableName'], '_', if(equals(item(), 'update_postimage'), 'update', item()), ''', ''U'') IS NOT NULL\n    DROP TABLE [', pipeline().parameters.DatabricksOutput['SchemaName'], '].[', pipeline().parameters.DatabricksOutput['TableName'], '_', if(equals(item(), 'update_postimage'), 'update', item()), '];'\n, ' SELECT 1 AS a')",
                                         "type": "Expression"
                                     },
-                                    "queryTimeout": "02:00:00",
+                                    "queryTimeout": "24:00:00",
                                     "partitionOption": "None"
                                 },
                                 "dataset": {
@@ -1294,7 +1326,7 @@
                                             "type": "Expression"
                                         },
                                         "DatabaseName": {
-                                            "value": "@pipeline().parameters.PoolName",
+                                            "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                             "type": "Expression"
                                         }
                                     }
@@ -1306,6 +1338,7 @@
             },
             {
                 "name": "Spark - Synapse Lakehouse Sync Log Success",
+                "description": "Call the Azure Databricks notebook to log in the _SynapseLakehouseSync delta table that the data was loaded successfully into Synapse.",
                 "type": "DatabricksNotebook",
                 "dependsOn": [
                     {
@@ -1315,7 +1348,7 @@
                         ]
                     },
                     {
-                        "activity": "Log Row Count - SynapseLakehouseSyncRecordCount",
+                        "activity": "Add TableRowCountSynapse to Json Object",
                         "dependencyConditions": [
                             "Succeeded"
                         ]
@@ -1332,24 +1365,8 @@
                 "typeProperties": {
                     "notebookPath": "/Synapse Lakehouse Sync/Synapse Lakehouse Sync Tracking Table Log Success",
                     "baseParameters": {
-                        "PoolName": {
-                            "value": "@pipeline().parameters.PoolName",
-                            "type": "Expression"
-                        },
-                        "SynapseLakehouseSyncKey": {
-                            "value": "@pipeline().parameters.DatabricksOutput.SynapseLakehouseSyncKey",
-                            "type": "Expression"
-                        },
-                        "SyncFolderPathFull": {
-                            "value": "@pipeline().parameters.DatabricksOutput.SynapseSync_abfss",
-                            "type": "Expression"
-                        },
-                        "SynapseWorkspaceName": {
-                            "value": "@pipeline().DataFactory",
-                            "type": "Expression"
-                        },
-                        "TableRowCountSynapse": {
-                            "value": "@string(activity('Log Row Count - SynapseLakehouseSyncRecordCount').output.value[0].TableRowCountSynapse)",
+                        "SynapseLakehouseSyncParameters": {
+                            "value": "@string(activity('Add TableRowCountSynapse to Json Object').output.value[0].JsonString)",
                             "type": "Expression"
                         }
                     }
@@ -1360,7 +1377,8 @@
                 }
             },
             {
-                "name": "Log Row Count - SynapseLakehouseSyncRecordCount",
+                "name": "Log Row Count - SynapseLakehouseSync",
+                "description": "Log the row count for the table in the logging.SynapseLakehouseSyncRecordCount logging table.",
                 "type": "Lookup",
                 "dependsOn": [
                     {
@@ -1388,10 +1406,10 @@
                     "source": {
                         "type": "SqlDWSource",
                         "sqlReaderQuery": {
-                            "value": "@concat('EXECUTE AS USER = ''Userstaticrc10''; DECLARE @RowInsertDateTime DATETIME2(0) = GETDATE()\n,@TableRowCountSynapse BIGINT = (SELECT COUNT_BIG(*) FROM ', pipeline().parameters.SchemaName, '.', pipeline().parameters.TableName, ')\nINSERT logging.SynapseLakehouseSyncRecordCount (PoolName, SchemaName, TableName, TableRowCountADLS, TableRowCountSynapse, RowInsertDateTime)\nVALUES (\n''', pipeline().parameters.PoolName,''',\n''', pipeline().parameters.SchemaName,''',\n''', pipeline().parameters.TableName,''', '\n, pipeline().parameters.DatabricksOutput.TableRowCountADLS\n, ', @TableRowCountSynapse, @RowInsertDateTime)\n; SELECT @TableRowCountSynapse AS TableRowCountSynapse\n')",
+                            "value": "@concat('EXECUTE AS USER = ''Userstaticrc10''; \nDECLARE @RowInsertDateTime DATETIME2(0) = GETDATE()\n    ,@TableRowCountSynapse BIGINT = (SELECT COUNT_BIG(*) FROM ', pipeline().parameters.DatabricksOutput['SchemaName'], '.', pipeline().parameters.DatabricksOutput['TableName'], ')\nINSERT logging.SynapseLakehouseSync (PoolName, SchemaName, TableName, TableRowCountADLS, TableRowCountSynapse, RowInsertDateTime)\nVALUES (\n''', pipeline().parameters.DatabricksOutput['PoolName'],''',\n''', pipeline().parameters.DatabricksOutput['SchemaName'],''',\n''', pipeline().parameters.DatabricksOutput['TableName'],''',\n', pipeline().parameters.DatabricksOutput['TableRowCountADLS'], \n', @TableRowCountSynapse, @RowInsertDateTime)\n; \n\nSELECT @TableRowCountSynapse AS TableRowCountSynapse\n')",
                             "type": "Expression"
                         },
-                        "queryTimeout": "02:00:00",
+                        "queryTimeout": "24:00:00",
                         "partitionOption": "None"
                     },
                     "dataset": {
@@ -1403,9 +1421,53 @@
                                 "type": "Expression"
                             },
                             "DatabaseName": {
-                                "value": "@pipeline().parameters.PoolName",
+                                "value": "@pipeline().parameters.DatabricksOutput['PoolName']",
                                 "type": "Expression"
                             }
+                        }
+                    },
+                    "firstRowOnly": false
+                }
+            },
+            {
+                "name": "Add TableRowCountSynapse to Json Object",
+                "description": "Add the TableRowCountSynapse a json object.",
+                "type": "Lookup",
+                "dependsOn": [
+                    {
+                        "activity": "Log Row Count - SynapseLakehouseSync",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlDWSource",
+                        "sqlReaderQuery": {
+                            "value": "@concat('\nDECLARE @json NVARCHAR(MAX) = '''\n, string(pipeline().parameters.DatabricksOutput)\n, ''' \n\n;WITH cte AS\n(\n\tSELECT PoolName, SynapseWorkspaceName, SynapseLakehouseSyncKey, ', activity('Log Row Count - SynapseLakehouseSync').output.value[0].TableRowCountSynapse, ' AS TableRowCountSynapse\n\t\t,SynapseSyncDataADLSFullPath, SynapseSyncDataDatabricksKeyVaultScope, SynapseSyncDataAzureKeyVaultSecretName\n\tFROM OPENJSON(@json)\n\tWITH\n\t(\n\t\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t\t,SynapseWorkspaceName NVARCHAR(1000) ''$.SynapseWorkspaceName''\n\t\t,SynapseLakehouseSyncKey NVARCHAR(1000) ''$.SynapseLakehouseSyncKey''\n\t\t,SynapseSyncDataADLSFullPath NVARCHAR(1000) ''$.SynapseSyncDataADLSFullPath''\n\t\t,SynapseSyncDataDatabricksKeyVaultScope NVARCHAR(1000) ''$.SynapseSyncDataDatabricksKeyVaultScope''\n\t\t,SynapseSyncDataAzureKeyVaultSecretName NVARCHAR(1000) ''$.SynapseSyncDataAzureKeyVaultSecretName''\n\t)\n)\nSELECT *, (SELECT * FROM cte FOR JSON AUTO, WITHOUT_ARRAY_WRAPPER) AS JsonString\nFROM cte\n')",
+                            "type": "Expression"
+                        },
+                        "queryTimeout": "24:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Synapse_Managed_Identity",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "ServerName": {
+                                "value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+                                "type": "Expression"
+                            },
+                            "DatabaseName": "master"
                         }
                     },
                     "firstRowOnly": false
@@ -1413,42 +1475,40 @@
             }
         ],
         "parameters": {
-            "SynapseSync_https": {
-                "type": "string",
-                "defaultValue": "abfss://gold@REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME.dfs.core.windows.net/Sample/"
-            },
-            "TableName": {
-                "type": "string",
-                "defaultValue": "FactInternetSales"
-            },
-            "SchemaName": {
-                "type": "string",
-                "defaultValue": "AdventureWorks"
-            },
-            "PoolName": {
-                "type": "string",
-                "defaultValue": "DataWarehouse"
-            },
             "PipelineValue": {
-                "type": "array"
-            },
-            "ChangeTypesArray": {
                 "type": "array",
                 "defaultValue": [
-                    "full_load"
+                    {
+                        "PipelineRunId": "d0aff143-70d5-428d-a5d9-a784efe71db8",
+                        "PipelineStartDate": "20220908",
+                        "PipelineStartDateTime": "2022-09-08 09:58:34"
+                    }
                 ]
             },
             "DatabricksOutput": {
                 "type": "object",
-                "defaultValue": "{ \t\"SynapseSync_abfss\": \"abfss://gold@REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME.dfs.core.windows.net/Sample/AdventureWorks/DimCustomer\", \t\"SynapseSync_https\": \"abfss://gold@REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME.dfs.core.windows.net/Sample/\", \t\"PoolName\": \"DataWarehouse\", \t\"DatabaseName\": \"AdventureWorks\", \t\"TableName\": \"FactInternetSales\", \t\"ExistsFlagSynapse\": \"False\", \t\"ChangeTypes\": [ \t\t\"full_load\" \t], \t\"TableRowCount\": \"20\" \t\"SynapseLakehouseSyncKey\": \"fdb1056f48b7bf06b31eea5c2afcb1eb\" }"
-            },
-            "DropTableFlag": {
-                "type": "bool",
-                "defaultValue": true
-            },
-            "KeyColumns": {
-                "type": "string",
-                "defaultValue": "_Id"
+                "defaultValue": {
+                    "SynapseSync_abfss": "abfss://data@synapsesynccav.dfs.core.windows.net/Sample",
+                    "SynapseSync_https": "https://synapsesynccav.dfs.core.windows.net/data/Sample",
+                    "ChangeTypes": [
+                        "full_load"
+                    ],
+                    "TableRowCountADLS": 606,
+                    "ExistsFlagSynapse": "True",
+                    "PoolName": "DataWarehouse",
+                    "SchemaName": "AdventureWorks",
+                    "TableName": "DimProduct",
+                    "KeyColumns": "_Id",
+                    "DeltaDataADLSFullPath": "abfss://data@synapsesynccav.dfs.core.windows.net/Sample/AdventureWorks/DimProduct",
+                    "DeltaDataDatabricksKeyVaultScope": "DataLakeStorageKey",
+                    "DeltaDataAzureKeyVaultSecretName": "DataLakeStorageKey",
+                    "SynapseSyncDataADLSFullPath": "abfss://data@synapsesynccav.dfs.core.windows.net/Sample/",
+                    "SynapseSyncDataDatabricksKeyVaultScope": "DataLakeStorageKey",
+                    "SynapseSyncDataAzureKeyVaultSecretName": "DataLakeStorageKey",
+                    "SynapseWorkspaceName": "synapsesynccav",
+                    "DropTableFlag": "True",
+                    "SynapseLakehouseSyncKey": "cdae7bfac3427a0029b86bada994290d"
+                }
             }
         },
         "variables": {
@@ -1485,7 +1545,7 @@
             "name": "Synapse Lakehouse Sync"
         },
         "annotations": [],
-        "lastPublishTime": "2022-09-06T01:01:04Z"
+        "lastPublishTime": "2022-09-07T18:28:28Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }
