@@ -276,12 +276,7 @@ do
     # Get the Pipeline name from the JSON, not the filename
     synapsePipelineName=$(jq -r .name "${synapsePipeline}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
 
-    cp "${synapsePipeline}" "${synapsePipeline}.tmp" 2>&1
-    sed -i "s|REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME|${bicepDeploymentDetails[synapseStorageAccountName]}|g" "${synapsePipeline}.tmp"
-    sed -i "s|REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME|${bicepDeploymentDetails[synapseSQLPoolName]}|g" "${synapsePipeline}.tmp"
-
-    createLinkedService=$(az synapse pipeline create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapsePipelineName}" --file @"${synapsePipeline}.tmp" 2>&1 | tee -a $deploymentLogFile)
-    rm "${synapsePipeline}.tmp"
+    createLinkedService=$(az synapse pipeline create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapsePipelineName}" --file @"${synapsePipeline}" 2>&1 | tee -a $deploymentLogFile)
 done
 
 ################################################################################
