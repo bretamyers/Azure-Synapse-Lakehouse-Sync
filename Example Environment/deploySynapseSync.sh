@@ -171,7 +171,8 @@ databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab
 
 # Create the Azure Key Vault Scope in the Databricks Workspace
 userOutput "STATUS" "Creating the Databricks Workspace Azure Key Vault Scope..."
-createDatabricksKeyVaultScope=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/secrets/scopes/create --body "{ \"scope\": \"AzureKeyVaultScope\", \"scope_backend_type\": \"AZURE_KEYVAULT\", \"backend_azure_keyvault\": { \"resource_id\": \"${bicepDeploymentDetails[keyVaultId]}\", \"dns_name\": \"${bicepDeploymentDetails[keyVaultVaultUri]}\" }, \"initial_manage_principal\": \"users\" }" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" 2>&1 | tee -a $deploymentLogFile)
+databricksScopeName="AzureKeyVaultScope"
+createDatabricksKeyVaultScope=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/secrets/scopes/create --body "{ \"scope\": \"${databricksScopeName}\", \"scope_backend_type\": \"AZURE_KEYVAULT\", \"backend_azure_keyvault\": { \"resource_id\": \"${bicepDeploymentDetails[keyVaultId]}\", \"dns_name\": \"${bicepDeploymentDetails[keyVaultVaultUri]}\" }, \"initial_manage_principal\": \"users\" }" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" 2>&1 | tee -a $deploymentLogFile)
 
 # Create the Databricks Cluster
 userOutput "STATUS" "Creating the Databricks Workspace Cluster definition..."
@@ -276,7 +277,6 @@ do
     synapsePipelineName=$(jq -r .name "${synapsePipeline}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
 
     cp "${synapsePipeline}" "${synapsePipeline}.tmp" 2>&1
-    sed -i "s|REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME|${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}|g" "${synapsePipeline}.tmp"
     sed -i "s|REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME|${bicepDeploymentDetails[synapseStorageAccountName]}|g" "${synapsePipeline}.tmp"
     sed -i "s|REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME|${bicepDeploymentDetails[synapseSQLPoolName]}|g" "${synapsePipeline}.tmp"
 
@@ -300,7 +300,13 @@ sampleDataCopy=$(az storage copy -s "https://synapseanalyticspocdata.blob.core.w
 sampleDataCopy=$(az storage copy -s "https://synapseanalyticspocdata.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_parquet/${sampleDataStorageSAS}" -d "https://${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}.blob.core.windows.net/gold/Sample?${enterpriseDataLakeStorageAccountSAS}" --recursive 2>&1 >> $deploymentLogFile)
 
 # Update the Auto Loader Metadata file template with the correct storage account and then upload it
+enterpriseDataLakeScopeSecretName="EnterpriseDataLakeAccountKey"
+synapseStorageScopeSecretName="SynapseStorageAccountKey"
 sed -i "s/REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[synapseStorageAccountName]}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_DATABRICKS_SCOPE_NAME/${databricksScopeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_ENTERPRISE_DATALAKE_SCOPE_SECRET_NAME/${enterpriseDataLakeScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_SYNAPSE_STORAGE_SCOPE_SECRET_NAME/${synapseStorageScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
 sampleDataCopy=$(az storage copy -s "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv" -d "https://${bicepDeploymentDetails[synapseStorageAccountName]}.blob.core.windows.net/synapsesync?${synapseStorageAccountSAS}" 2>&1 >> $deploymentLogFile)
 
 # Display the deployment details to the user

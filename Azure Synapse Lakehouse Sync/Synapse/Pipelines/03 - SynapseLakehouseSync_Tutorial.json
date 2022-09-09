@@ -160,7 +160,7 @@
                                 "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
                                 "type": "Expression"
                             },
-                            "DatabaseName": "DataWarehouse"
+                            "DatabaseName": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
                         }
                     },
                     "firstRowOnly": false
@@ -194,7 +194,7 @@
                                 "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
                                 "type": "Expression"
                             },
-                            "DatabaseName": "DataWarehouse"
+                            "DatabaseName": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
                         }
                     },
                     "firstRowOnly": false
@@ -279,7 +279,7 @@
                                 "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
                                 "type": "Expression"
                             },
-                            "DatabaseName": "DataWarehouse"
+                            "DatabaseName": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
                         }
                     },
                     "firstRowOnly": false
@@ -289,7 +289,7 @@
         "variables": {
             "StorageAccountNameMetadata": {
                 "type": "String",
-                "defaultValue": "https://synapsesynccav.dfs.core.windows.net/data/Synapse_Lakehouse_Sync_Metadata.csv"
+                "defaultValue": "https://REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME.dfs.core.windows.net/data/Synapse_Lakehouse_Sync_Metadata.csv"
             }
         },
         "folder": {
