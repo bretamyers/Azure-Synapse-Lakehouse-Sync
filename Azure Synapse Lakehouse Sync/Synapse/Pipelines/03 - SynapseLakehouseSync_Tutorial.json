@@ -27,7 +27,7 @@
                     "notebookPath": "/Synapse Lakehouse Sync Tutorial/Convert Parquet to Delta Tables - AdventureWorks",
                     "baseParameters": {
                         "SynapseLakehouseSyncParameters": {
-                            "value": "@concat('{\"DeltaDataFolderPathFull\":\"', 'abfss://', 'data', '@', pipeline().DataFactory, '.dfs.core.windows.net/Sample/', '\"'\n,', \"DatabaseName\":\"AdventureWorks\", \"SynapseWorkspaceName\":\"', pipeline().DataFactory\n, '\", \"ParquetDataADLSFullPath\":\"abfss://data@synapsesynccav.dfs.core.windows.net/Sample/\", \"ParquetDataDatabricksKeyVaultScope\":\"DataLakeStorageKey\", \"ParquetDataAzureKeyVaultSecretName\":\"DataLakeStorageKey\"}')",
+                            "value": "@concat('{\"DatabaseName\":\"AdventureWorks\", \"SynapseWorkspaceName\":\"', pipeline().DataFactory\n, '\", \"ParquetDataADLSFullPath\":\"', variables('ParquetDataFolderPathFull'), '\", \"ParquetDataDatabricksKeyVaultScope\":\"AzureKeyVaultScope\", \"ParquetDataAzureKeyVaultSecretName\":\"EnterpriseDataLakeAccountKey\"}')",
                             "type": "Expression"
                         }
                     }
@@ -88,7 +88,7 @@
                     "notebookPath": "/Synapse Lakehouse Sync Tutorial/Simulate Data Changes - AdventureWorks",
                     "baseParameters": {
                         "SynapseLakehouseSyncParameters": {
-                            "value": "@concat('{\"DeltaDataFolderPathFull\":\"', 'abfss://', 'data', '@', pipeline().DataFactory, '.dfs.core.windows.net/Sample/', '\"'\n,', \"DatabaseName\":\"AdventureWorks\", \"SynapseWorkspaceName\":\"', pipeline().DataFactory\n, '\", \"ParquetDataADLSFullPath\":\"abfss://data@synapsesynccav.dfs.core.windows.net/Sample/\", \"ParquetDataDatabricksKeyVaultScope\":\"DataLakeStorageKey\", \"ParquetDataAzureKeyVaultSecretName\":\"DataLakeStorageKey\"}')",
+                            "value": "@concat('{\"DatabaseName\":\"AdventureWorks\", \"SynapseWorkspaceName\":\"', pipeline().DataFactory\n, '\", \"ParquetDataADLSFullPath\":\"abfss://data@synapsesynccav.dfs.core.windows.net/Sample/\", \"ParquetDataDatabricksKeyVaultScope\":\"DataLakeStorageKey\", \"ParquetDataAzureKeyVaultSecretName\":\"DataLakeStorageKey\"}')",
                             "type": "Expression"
                         }
                     }
@@ -160,7 +160,7 @@
                                 "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
                                 "type": "Expression"
                             },
-                            "DatabaseName": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
+                            "DatabaseName": "DataWarehouse"
                         }
                     },
                     "firstRowOnly": false
@@ -194,7 +194,7 @@
                                 "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
                                 "type": "Expression"
                             },
-                            "DatabaseName": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
+                            "DatabaseName": "DataWarehouse"
                         }
                     },
                     "firstRowOnly": false
@@ -279,7 +279,7 @@
                                 "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
                                 "type": "Expression"
                             },
-                            "DatabaseName": "REPLACE_SYNAPSE_ANALYTICS_SQL_POOL_NAME"
+                            "DatabaseName": "DataWarehouse"
                         }
                     },
                     "firstRowOnly": false
@@ -289,14 +289,18 @@
         "variables": {
             "StorageAccountNameMetadata": {
                 "type": "String",
-                "defaultValue": "https://REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME.dfs.core.windows.net/data/Synapse_Lakehouse_Sync_Metadata.csv"
+                "defaultValue": "https://synapsesyncjjb.dfs.core.windows.net/synapsesync/Synapse_Lakehouse_Sync_Metadata.csv"
+            },
+            "ParquetDataFolderPathFull": {
+                "type": "String",
+                "defaultValue": "abfss://gold@enterprisedatalakejjb.dfs.core.windows.net/Sample/"
             }
         },
         "folder": {
             "name": "Synapse Lakehouse Sync Tutorial"
         },
         "annotations": [],
-        "lastPublishTime": "2022-09-07T19:25:27Z"
+        "lastPublishTime": "2022-09-09T13:55:19Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }
