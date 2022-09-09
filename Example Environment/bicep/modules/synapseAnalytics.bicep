@@ -117,7 +117,7 @@ resource synapseSQLPool 'Microsoft.Synapse/workspaces/sqlPools@2021-06-01' = {
   parent: synapseAnalyticsWorkspace
   location: azureRegion
   sku: {
-    name: 'DW100c'
+    name: 'DW1000c'
   }
 }
 
