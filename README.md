@@ -12,7 +12,7 @@ The following commands should be executed from the Azure Cloud Shell at https://
 ```
 @Azure:~$ git clone https://github.com/bretamyers/Azure-Synapse-Lakehouse-Sync
 @Azure:~$ cd 'Azure-Synapse-Lakehouse-Sync/Example Environment'
-@Azure:~$ bash deploySynapse.sh 
+@Azure:~$ bash deploySynapseSync.sh 
 ```
 
 ### What Gets Deployed
@@ -37,7 +37,7 @@ The following commands should be executed from the Azure Cloud Shell at https://
 - Serverless SQL Demo Data Database
 - Proper service and user permissions for Azure Synapse Analytics Workspace and Azure Data Lake Storage Gen2
 - Parquet Auto Ingestion pipeline to optimize data ingestion using best practices
-- 
+
 
 ## Getting Started
 #### Prerequisites:
