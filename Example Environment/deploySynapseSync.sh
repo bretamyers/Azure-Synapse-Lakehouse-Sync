@@ -145,7 +145,7 @@ fi
 # Part 2: Post-Deployment Configuration                                        #
 ################################################################################
 
-bicepOutputVariables=("resourceGroup" "synapseAnalyticsWorkspaceName" "synapseStorageAccountName" "enterpriseDataLakeStorageAccountName" "synapseSQLPoolName" "synapseSQLAdministratorLogin" "databricksWorkspaceName" "databricksWorkspaceUrl" "databricksWorkspaceId" "keyVaultVaultUri" "keyVaultId")
+bicepOutputVariables=("resourceGroup" "synapseAnalyticsWorkspaceName" "synapseStorageAccountName" "enterpriseDataLakeStorageAccountName" "synapseSQLPoolName" "synapseSQLSecondPoolName" "synapseSQLAdministratorLogin" "databricksWorkspaceName" "databricksWorkspaceUrl" "databricksWorkspaceId" "keyVaultVaultUri" "keyVaultId")
 
 # Get the output variables from the Bicep deployment
 for bicepVariable in "${bicepOutputVariables[@]}"; do 
@@ -214,6 +214,7 @@ userOutput "STATUS" "Executing Synapse Queries..."
 
 # Execute one query against master
 executeQuery=$(sqlcmd -U ${bicepDeploymentDetails[synapseSQLAdministratorLogin]} -P ${bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]} -S tcp:${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE ${bicepDeploymentDetails[synapseSQLPoolName]} SET RESULT_SET_CACHING ON;" 2>&1 | tee -a $deploymentLogFile)
+executeQuery=$(sqlcmd -U ${bicepDeploymentDetails[synapseSQLAdministratorLogin]} -P ${bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]} -S tcp:${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}.sql.azuresynapse.net -d master -I -Q "ALTER DATABASE ${bicepDeploymentDetails[synapseSQLSecondPoolName]} SET RESULT_SET_CACHING ON;" 2>&1 | tee -a $deploymentLogFile)
 
 # Validate the Synapse Dedicated SQL Pool is running and we were able to establish a connection
 if [[ "${executeQuery}" == *"Cannot connect to database when it is paused"* ]]; then
@@ -228,6 +229,7 @@ fi
 for synapseQuery in '../Azure Synapse Lakehouse Sync/Synapse/Queries'/*.sql
 do
     executeQuery=$(sqlcmd -U ${bicepDeploymentDetails[synapseSQLAdministratorLogin]} -P ${bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]} -S tcp:${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}.sql.azuresynapse.net -d ${bicepDeploymentDetails[synapseSQLPoolName]} -I -i "${synapseQuery}" 2>&1 | tee -a $deploymentLogFile)
+    executeQuery=$(sqlcmd -U ${bicepDeploymentDetails[synapseSQLAdministratorLogin]} -P ${bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]} -S tcp:${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}.sql.azuresynapse.net -d ${bicepDeploymentDetails[synapseSQLSecondPoolName]} -I -i "${synapseQuery}" 2>&1 | tee -a $deploymentLogFile)
 done
 
 ################################################################################

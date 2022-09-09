@@ -11,6 +11,9 @@
     "synapseSQLPoolName": {
       "value": "DataWarehouse" 
     },
+    "synapseSQLSecondPoolName": {
+      "value": "DataWarehouse_Finance" 
+    },
     "synapseSQLAdministratorLogin": {
       "value": "sqladminuser" 
     },

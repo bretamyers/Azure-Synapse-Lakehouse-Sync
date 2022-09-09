@@ -15,8 +15,11 @@ param azureRegion string
 @description('Resource Group for all related Azure services.')
 param resourceGroupName string
 
-@description('Name of the SQL pool to create.')
+@description('Name of the Dedicated SQL Pool to create.')
 param synapseSQLPoolName string
+
+@description('Name of the second Dedicated SQL Pool to create.')
+param synapseSQLSecondPoolName string
 
 @description('Native SQL account for administration.')
 param synapseSQLAdministratorLogin string
@@ -76,6 +79,7 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
     resourceSuffix: resourceSuffix
     azureRegion: azureRegion
     synapseSQLPoolName: synapseSQLPoolName
+    synapseSQLSecondPoolName: synapseSQLSecondPoolName
     synapseSQLAdministratorLogin: synapseSQLAdministratorLogin
     synapseSQLAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
@@ -107,6 +111,7 @@ output synapseAnalyticsWorkspaceName string = synapseAnalytics.outputs.synapseAn
 output synapseStorageAccountName string = storageAccounts.outputs.synapseStorageAccountName
 output enterpriseDataLakeStorageAccountName string = storageAccounts.outputs.enterpriseDataLakeStorageAccountName
 output synapseSQLPoolName string = synapseSQLPoolName
+output synapseSQLSecondPoolName string = synapseSQLSecondPoolName
 output synapseSQLAdministratorLogin string = synapseSQLAdministratorLogin
 output databricksWorkspaceName string = databricksWorkspace.outputs.databricksWorkspaceName
 output databricksWorkspaceUrl string = databricksWorkspace.outputs.databricksWorkspaceUrl

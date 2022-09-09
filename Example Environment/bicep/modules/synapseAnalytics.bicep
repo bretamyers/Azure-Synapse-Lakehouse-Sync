@@ -11,6 +11,7 @@ targetScope = 'resourceGroup'
 param resourceSuffix string
 param azureRegion string
 param synapseSQLPoolName string
+param synapseSQLSecondPoolName string
 param synapseSQLAdministratorLogin string
 @secure()
 param synapseSQLAdministratorLoginPassword string
@@ -127,6 +128,29 @@ resource synapseSQLPool 'Microsoft.Synapse/workspaces/sqlPools@2021-06-01' = {
 resource synapseSQLPoolGeoBackups 'Microsoft.Synapse/workspaces/sqlPools/geoBackupPolicies@2021-06-01' = {
   name: 'Default'
   parent: synapseSQLPool
+  properties: {
+    state: 'Disabled'
+  }
+}
+
+// Synapse Dedicated SQL Pool: Create the initial SQL Pool for the Data Warehouse
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/quickstart-create-sql-pool-studio
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/sqlpools
+resource synapseSQLSecondPool 'Microsoft.Synapse/workspaces/sqlPools@2021-06-01' = {
+  name: synapseSQLSecondPoolName
+  parent: synapseAnalyticsWorkspace
+  location: azureRegion
+  sku: {
+    name: 'DW100c'
+  }
+}
+
+// Synapse Dedicated SQL Pool Geo-Backups: Disable Geo-Backups
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/backup-and-restore
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/sqlpools/geobackuppolicies
+resource synapseSQLSecondPoolGeoBackups 'Microsoft.Synapse/workspaces/sqlPools/geoBackupPolicies@2021-06-01' = {
+  name: 'Default'
+  parent: synapseSQLSecondPool
   properties: {
     state: 'Disabled'
   }
