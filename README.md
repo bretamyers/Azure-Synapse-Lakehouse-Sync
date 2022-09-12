@@ -1,59 +1,33 @@
-# Azure-Synapse-Lakehouse-Sync
+# Azure Synapse Lakehouse Sync
 
 
-#### Disclaimer:
+#### Disclaimer
 *This solution was built for demoing the art of the possible when combining the best of spark with the best of data warehousing. It is not intended to be used in production environments.*
 
-#### Description:
+#### Description
 TODO
 
-#### "Easy Button" Deployment
-The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using bash:
-```
-@Azure:~$ git clone https://github.com/bretamyers/Azure-Synapse-Lakehouse-Sync
-@Azure:~$ cd 'Azure-Synapse-Lakehouse-Sync/Tutorial Environment'
-@Azure:~$ bash deployTutorial.sh 
-```
+#### Using Azure Synapse Lakehouse Sync
 
-### What Gets Deployed
-#### Azure Synapse Analytics Workspace
-- DW1000 Dedicated SQL Pool
+[Self Deployment](#self-deployment-getting-started): Instructions for deploying, configuring, and using Azure Synapse Lakehouse Sync in your own environment.
 
-#### Azure Databricks Workspace
-- A small cluster
-- Two folders with seven notebooks.
+[Tutorial Environment](/Tutorial Environment/README.md): Deploys a fully working Azure Synapse Lakehouse Sync tutorial environment in your Azure subscription. This is a great way to see how exactly the solution works end-to-end.
 
-#### Azure Data Lake Storage Gen2
-- <b>config</b> container for Azure Synapse Analytics Workspace
-- <b>data</b> container for queried/ingested data
-
-#### Azure Key Value
-- Logging and telemetry for Azure Synapse Analytics
-
-#### What's Configured
-- Enable Result Set Caching
-- Create a pipeline to auto pause/resume the Dedicated SQL Pool
-- Feature flag to enable/disable Private Endpoints
-- Serverless SQL Demo Data Database
-- Proper service and user permissions for Azure Synapse Analytics Workspace and Azure Data Lake Storage Gen2
-- Parquet Auto Ingestion pipeline to optimize data ingestion using best practices
-
-
-## Getting Started
-#### Prerequisites:
+## Self Deployment: Getting Started
+#### Prerequisites
 - Synapse Workspace with the sync solution artifacts added (pipelines and linked services)
 - Synapse dedicated pool created and running
 - Databricks workspace with notebooks added
 - Storage account with data preferably structured in a dimensional model
 
-#### Inputs:
+#### Inputs
 - PoolName - The Synapse dedicated pool name
 - DatabaseName - The Synapse tables schema name
 - TableName - The Synapse table name
 - FolderPathFull - The full path to the ADLS location for the data in delta format
 - ChangesFolderPathFull - The full path for the ADLS location where the change feed files will land.
 
-#### Example:
+#### Example
 - PoolName = myPool 
 - DatabaseName  = schemaA
 - TableName = tableA
@@ -175,6 +149,4 @@ A delta table that is created in the specified SyncFolderPathFull value from Syn
 |     ADLSStagedFlag             |     A flag for identifying when the   data from the changed data feed has been queried and staged into ADLS.                                                                                                                                                                                                                                                                                                                                          |
 |     SynapseLoadedFlag          |     A flag for identifying when the   data was successfully loaded into Synapse. No pipeline errors occurred.                                                                                                                                                                                                                                                                                                                                         |
 |     SynapseLoadedDateTime      |     The datetime of when the data   was loaded into Synapse with no errors.                                                                                                                                                                                                                                                                                                                                                                           |
-
-
 
