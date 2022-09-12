@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# This script is in two parts; Environment Deployment and Post-Deployment Configuration. While there appears
+# This script is in two parts; Tutorial Environment Deployment and Post-Deployment Configuration. While there appears
 # to be alot going on here, it's mostly error handling for various scenarios that can arise. We're really
 # just deploying the environment via Bicep, running a few queries against Synapse, and deploying a few
 # Synapse pipeline and Databricks artifacts.
 #
-#   Part 1: Environment Deployment
+#   Part 1: Tutorial Environment Deployment
 #
 #       This performs a Bicep template deployment if it wasn't done manually. The Bicep template creates a 
 #       Databricks Workspace, Azure Data Lake Storage Gen2, and a Synapse Analytics Workspace.
@@ -21,15 +21,15 @@
 #
 #   This script should be executed via the Azure Cloud Shell (https://shell.azure.com):
 #
-#       @Azure:~/Azure-Synapse-Lakehouse-Sync$ bash deploySynapseSync.sh
+#       @Azure:~/Azure-Synapse-Lakehouse-Sync$ bash deployTutorial.sh
 #
 
 ################################################################################
-# Part 1: Environment Deployment                                               #
+# Part 1: Tutorial Environment Deployment                                      #
 ################################################################################
 
 bicepDeploymentName="Azure-Synapse-Lakehouse-Sync"
-deploymentLogFile="deploySynapseSync.log"
+deploymentLogFile="deployment.log"
 
 declare -A accountDetails
 declare -A bicepDeploymentDetails

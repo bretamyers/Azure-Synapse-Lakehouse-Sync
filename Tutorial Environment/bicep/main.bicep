@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Azure Synapse Lakehouse Sync: Bicep Template
+//  Azure Synapse Lakehouse Sync Tutorial: Bicep Template
 //
 //    Deploy via Azure Cloud Shell (https://shell.azure.com):
 //      az deployment sub create --template-file bicep/main.bicep --parameters bicep/main.parameters.json --name Azure-Synapse-Lakehouse-Sync --location eastus
