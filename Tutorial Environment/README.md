@@ -17,26 +17,26 @@ The following commands should be executed from the Azure Cloud Shell at https://
 
 ## What's Deployed
 
-### Azure Synapse Analytics Workspace
+#### Azure Synapse Analytics Workspace
 - **DW1000 Dedicated SQL Pool:** Primary data warehouse Enterprise Data Lake Gold Zone changes are synchronized to
 - **DW100 Dedicated SQL Pool:** Example of a second data warehouse were only some tables are synchronized but from the same Enterprise Data Lake Gold Zone
 - Azure Synapse Lakehouse Sync Pipelines
 
-### Azure Databricks Workspace
+#### Azure Databricks Workspace
 - Small Cluster
 - Azure Synapse Lakehouse Sync Notebooks
 
-### Azure Data Lake Storage Gen2: Synapse Workspace
+#### Azure Data Lake Storage Gen2: Synapse Workspace
 - **workspace:** Container for the Azure Synapse Analytics Workspace
 - **<b>**synapsesync:**</b>** Container for Azure Synapse Lakehouse Sync change history from the Enterprise Data Lake Gold Zone
 
-### Azure Data Lake Storage Gen2: Enterprise Data Lake
+#### Azure Data Lake Storage Gen2: Enterprise Data Lake
 - **gold:** Container for the Enterprise Data Lake Gold Zone
 
-### Azure Key Vault
+#### Azure Key Vault
 - Secure storage for Azure Data Lake access keys and used by Databricks for authentication
 
-## What's Configured
+### What's Configured
 The **deployTutorial.sh** script will execute a Bicep deployment for the environment and then configure the environment with the Azure Synapse Lakehouse Sync artifacts including: 
 
 - Synapse Workspace Pipelines
