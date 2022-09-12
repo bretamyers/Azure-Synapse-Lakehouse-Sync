@@ -5,8 +5,7 @@ Whether you're new to the data lake & lakehouse pattern, or exploring how Synaps
 
 # How to Deploy
 
-### "Easy Button" Deployment
-The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using Bash:
+The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using Bash. This will deploy the full tutorial environment with no additional configuration needed.
 
 ```
 @Azure:~$ git clone https://github.com/bretamyers/Azure-Synapse-Lakehouse-Sync
@@ -15,11 +14,11 @@ The following commands should be executed from the Azure Cloud Shell at https://
 @Azure:~$ bash deployTutorial.sh 
 ```
 
-## What's Deployed
+# What's Deployed
 
 #### Azure Synapse Analytics Workspace
 - **DW1000 Dedicated SQL Pool:** Primary data warehouse Enterprise Data Lake Gold Zone changes are synchronized to
-- **DW100 Dedicated SQL Pool:** Example of a second data warehouse were only some tables are synchronized but from the same Enterprise Data Lake Gold Zone
+- **DW100 Dedicated SQL Pool:** Example of a second data warehouse where only some tables are synchronized from the same Enterprise Data Lake Gold Zone
 - Azure Synapse Lakehouse Sync Pipelines
 
 #### Azure Databricks Workspace
@@ -28,15 +27,15 @@ The following commands should be executed from the Azure Cloud Shell at https://
 
 #### Azure Data Lake Storage Gen2: Synapse Workspace
 - **workspace:** Container for the Azure Synapse Analytics Workspace
-- **<b>**synapsesync:**</b>** Container for Azure Synapse Lakehouse Sync change history from the Enterprise Data Lake Gold Zone
+- **synapsesync:** Container for Azure Synapse Lakehouse Sync change history from the Enterprise Data Lake Gold Zone. It also contains the **Synapse_Lakehouse_Sync_Metadata.csv** file which instructs Azure Synapse Lakehouse Sync on the tables that need to be synchronized.
 
 #### Azure Data Lake Storage Gen2: Enterprise Data Lake
-- **gold:** Container for the Enterprise Data Lake Gold Zone
+- **gold:** Container for the Enterprise Data Lake Gold Zone which includes the sample data
 
 #### Azure Key Vault
 - Secure storage for Azure Data Lake access keys and used by Databricks for authentication
 
-### What's Configured
+# What's Configured
 The **deployTutorial.sh** script will execute a Bicep deployment for the environment and then configure the environment with the Azure Synapse Lakehouse Sync artifacts including: 
 
 - Synapse Workspace Pipelines
