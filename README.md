@@ -11,7 +11,7 @@ TODO
 
 [Self Deployment](#self-deployment-getting-started): Instructions for deploying, configuring, and using Azure Synapse Lakehouse Sync in your own environment.
 
-[Tutorial Environment](/Tutorial Environment/README.md): Deploys a fully working Azure Synapse Lakehouse Sync tutorial environment in your Azure subscription. This is a great way to see how exactly the solution works end-to-end.
+[Tutorial Environment](/Tutorial%20Environment/README.md): Deploys a fully working Azure Synapse Lakehouse Sync tutorial environment in your Azure subscription. This is a great way to see how exactly the solution works end-to-end.
 
 ## Self Deployment: Getting Started
 #### Prerequisites
