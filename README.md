@@ -9,6 +9,6 @@ TODO
 
 #### Using Azure Synapse Lakehouse Sync
 
-[Self Deployment](#self-deployment-getting-started): Instructions for deploying, configuring, and using Azure Synapse Lakehouse Sync in your own environment.
+[Self Deployment](/Azure%20Synapse%20Lakehouse%20Sync): Instructions for deploying, configuring, and using Azure Synapse Lakehouse Sync in your own environment.
 
 [Tutorial Environment](/Tutorial%20Environment): Deploys a fully working Azure Synapse Lakehouse Sync tutorial environment in your Azure subscription. This is a great way to see how exactly the solution works end-to-end.
