@@ -1,7 +1,5 @@
 # Databricks Cluster Definition
 
-The following Dataset should be imported into your Synapse Analytics Workspace. 
-
 ## SynapseLakehouseSyncCluster.json
 
 **Required:** NO
