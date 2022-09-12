@@ -420,7 +420,7 @@
                     "source": {
                         "type": "SqlDWSource",
                         "sqlReaderQuery": {
-                            "value": "@concat('DECLARE @json NVARCHAR(MAX)  = '''\n, activity('Lookup - Sync Pools').output.value\n, ''' \n\n;WITH cte AS\n(\n\tSELECT DISTINCT PoolName, SynapseWorkspaceName\n\t\t,SynapseSyncDataADLSFullPath, SynapseSyncDataDatabricksKeyVaultScope, SynapseSyncDataAzureKeyVaultSecretName\n\tFROM OPENJSON(@json)\n\tWITH\n\t(\n\t\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t\t,SynapseWorkspaceName NVARCHAR(1000) ''$.SynapseWorkspaceName''\n\t\t,DeltaDataADLSFullPath NVARCHAR(1000) ''$.DeltaDataADLSFullPath''\n\t\t,SynapseSyncDataADLSFullPath NVARCHAR(1000) ''$.SynapseSyncDataADLSFullPath''\n\t\t,SynapseSyncDataDatabricksKeyVaultScope NVARCHAR(1000) ''$.SynapseSyncDataDatabricksKeyVaultScope''\n\t\t,SynapseSyncDataAzureKeyVaultSecretName NVARCHAR(1000) ''$.SynapseSyncDataAzureKeyVaultSecretName''\n\t)\n)\nSELECT *\n\t\t--,(SELECT * FROM cte FOR JSON AUTO, WITHOUT_ARRAY_WRAPPER) AS JsonString\nFROM cte\n')",
+                            "value": "@concat('DECLARE @json NVARCHAR(MAX)  = '''\n, activity('Lookup - Sync Pools').output.value\n, ''' \n\n;WITH cte AS\n(\n\tSELECT DISTINCT PoolName, SynapseWorkspaceName\n\t\t,SynapseSyncDataADLSFullPath, SynapseSyncDataDatabricksKeyVaultScope, SynapseSyncDataAzureKeyVaultSecretName\n\tFROM OPENJSON(@json)\n\tWITH\n\t(\n\t\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t\t,SynapseWorkspaceName NVARCHAR(1000) ''$.SynapseWorkspaceName''\n\t\t,DeltaDataADLSFullPath NVARCHAR(1000) ''$.DeltaDataADLSFullPath''\n\t\t,SynapseSyncDataADLSFullPath NVARCHAR(1000) ''$.SynapseSyncDataADLSFullPath''\n\t\t,SynapseSyncDataDatabricksKeyVaultScope NVARCHAR(1000) ''$.SynapseSyncDataDatabricksKeyVaultScope''\n\t\t,SynapseSyncDataAzureKeyVaultSecretName NVARCHAR(1000) ''$.SynapseSyncDataAzureKeyVaultSecretName''\n\t)\n)\nSELECT *\nFROM cte\n')",
                             "type": "Expression"
                         },
                         "queryTimeout": "24:00:00",
@@ -615,7 +615,7 @@
                     "source": {
                         "type": "SqlDWSource",
                         "sqlReaderQuery": {
-                            "value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', activity('Lookup - Sync Pools').output.value, '''\n\n;WITH cte AS\n(\n\tSELECT DISTINCT PoolName, SynapseWorkspaceName, SynapseSyncDataADLSFullPath, SynapseSyncDataDatabricksKeyVaultScope, SynapseSyncDataAzureKeyVaultSecretName\n\tFROM OPENJSON(@sql)\n\tWITH\n\t(\n\t\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t\t,SynapseWorkspaceName NVARCHAR(1000) ''$.SynapseWorkspaceName''\n\t\t,SynapseSyncDataADLSFullPath NVARCHAR(1000) ''$.SynapseSyncDataADLSFullPath''\n\t\t,SynapseSyncDataDatabricksKeyVaultScope NVARCHAR(1000) ''$.SynapseSyncDataDatabricksKeyVaultScope''\n\t\t,SynapseSyncDataAzureKeyVaultSecretName NVARCHAR(1000) ''$.SynapseSyncDataAzureKeyVaultSecretName''\n\t)\n)\nSELECT *\n\t\t,(SELECT * FROM cte FOR JSON AUTO, WITHOUT_ARRAY_WRAPPER) AS JsonString\nFROM cte\n')",
+                            "value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', activity('Lookup - Sync Pools').output.value, '''\n\n;WITH cte AS\n(\n\tSELECT DISTINCT PoolName, SynapseWorkspaceName, SynapseSyncDataADLSFullPath, SynapseSyncDataDatabricksKeyVaultScope, SynapseSyncDataAzureKeyVaultSecretName\n\tFROM OPENJSON(@sql)\n\tWITH\n\t(\n\t\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t\t,SynapseWorkspaceName NVARCHAR(1000) ''$.SynapseWorkspaceName''\n\t\t,SynapseSyncDataADLSFullPath NVARCHAR(1000) ''$.SynapseSyncDataADLSFullPath''\n\t\t,SynapseSyncDataDatabricksKeyVaultScope NVARCHAR(1000) ''$.SynapseSyncDataDatabricksKeyVaultScope''\n\t\t,SynapseSyncDataAzureKeyVaultSecretName NVARCHAR(1000) ''$.SynapseSyncDataAzureKeyVaultSecretName''\n\t)\n)\nSELECT *\n\t\t,(SELECT * FROM cte AS b \n\t\tWHERE a.PoolName = b.PoolName \n\t\tAND a.SynapseWorkspaceName = b.SynapseWorkspaceName \n\t\tAND a.SynapseSyncDataADLSFullPath = b.SynapseSyncDataADLSFullPath \n\t\tAND a.SynapseSyncDataDatabricksKeyVaultScope = b.SynapseSyncDataDatabricksKeyVaultScope \n\t\tAND a.SynapseSyncDataAzureKeyVaultSecretName = b.SynapseSyncDataAzureKeyVaultSecretName \n\t\tFOR JSON AUTO, WITHOUT_ARRAY_WRAPPER) AS JsonString\nFROM cte AS a\n')",
                             "type": "Expression"
                         },
                         "queryTimeout": "24:00:00",
@@ -683,7 +683,7 @@
         "parameters": {
             "StorageAccountNameMetadata": {
                 "type": "string",
-                "defaultValue": "https://synapsesynccav.dfs.core.windows.net/data/Synapse_Lakehouse_Sync_Metadata.csv"
+                "defaultValue": "https://synapsesynccav.dfs.core.windows.net/synapsesync/Synapse_Lakehouse_Sync_Metadata.csv"
             }
         },
         "variables": {
@@ -705,7 +705,7 @@
             "name": "Synapse Lakehouse Sync"
         },
         "annotations": [],
-        "lastPublishTime": "2022-09-07T19:39:10Z"
+        "lastPublishTime": "2022-09-09T22:51:39Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }

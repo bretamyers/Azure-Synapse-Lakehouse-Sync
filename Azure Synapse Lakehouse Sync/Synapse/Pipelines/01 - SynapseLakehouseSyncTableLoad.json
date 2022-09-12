@@ -1406,7 +1406,7 @@
                     "source": {
                         "type": "SqlDWSource",
                         "sqlReaderQuery": {
-                            "value": "@concat('EXECUTE AS USER = ''Userstaticrc10''; \nDECLARE @RowInsertDateTime DATETIME2(0) = GETDATE()\n    ,@TableRowCountSynapse BIGINT = (SELECT COUNT_BIG(*) FROM ', pipeline().parameters.DatabricksOutput['SchemaName'], '.', pipeline().parameters.DatabricksOutput['TableName'], ')\nINSERT logging.SynapseLakehouseSync (PoolName, SchemaName, TableName, TableRowCountADLS, TableRowCountSynapse, RowInsertDateTime)\nVALUES (\n''', pipeline().parameters.DatabricksOutput['PoolName'],''',\n''', pipeline().parameters.DatabricksOutput['SchemaName'],''',\n''', pipeline().parameters.DatabricksOutput['TableName'],''',\n', pipeline().parameters.DatabricksOutput['TableRowCountADLS'], \n', @TableRowCountSynapse, @RowInsertDateTime)\n; \n\nSELECT @TableRowCountSynapse AS TableRowCountSynapse\n')",
+                            "value": "@concat('EXECUTE AS USER = ''Userstaticrc10''; \nDECLARE @RowInsertDateTime DATETIME2(0) = GETDATE()\n    ,@TableRowCountSynapse BIGINT = (SELECT COUNT_BIG(*) FROM ', pipeline().parameters.DatabricksOutput['SchemaName'], '.', pipeline().parameters.DatabricksOutput['TableName'], ')\nINSERT logging.SynapseLakehouseSync (PoolName, SchemaName, TableName, TableRowCountADLS, TableRowCountSynapse, DeltaDataADLSFullPath, SynapseSyncDataADLSFullPath, RowInsertDateTime)\nVALUES (\n''', pipeline().parameters.DatabricksOutput['PoolName'],''',\n''', pipeline().parameters.DatabricksOutput['SchemaName'],''',\n''', pipeline().parameters.DatabricksOutput['TableName'],''',\n', pipeline().parameters.DatabricksOutput['TableRowCountADLS'], \n', @TableRowCountSynapse, '''\n, pipeline().parameters.DatabricksOutput['DeltaDataADLSFullPath'], ''', '''\n, pipeline().parameters.DatabricksOutput['SynapseSyncDataADLSFullPath'], '''\n, @RowInsertDateTime)\n; \n\nSELECT @TableRowCountSynapse AS TableRowCountSynapse\n')",
                             "type": "Expression"
                         },
                         "queryTimeout": "24:00:00",
@@ -1476,39 +1476,10 @@
         ],
         "parameters": {
             "PipelineValue": {
-                "type": "array",
-                "defaultValue": [
-                    {
-                        "PipelineRunId": "d0aff143-70d5-428d-a5d9-a784efe71db8",
-                        "PipelineStartDate": "20220908",
-                        "PipelineStartDateTime": "2022-09-08 09:58:34"
-                    }
-                ]
+                "type": "array"
             },
             "DatabricksOutput": {
-                "type": "object",
-                "defaultValue": {
-                    "SynapseSync_abfss": "abfss://data@synapsesynccav.dfs.core.windows.net/Sample",
-                    "SynapseSync_https": "https://synapsesynccav.dfs.core.windows.net/data/Sample",
-                    "ChangeTypes": [
-                        "full_load"
-                    ],
-                    "TableRowCountADLS": 606,
-                    "ExistsFlagSynapse": "True",
-                    "PoolName": "DataWarehouse",
-                    "SchemaName": "AdventureWorks",
-                    "TableName": "DimProduct",
-                    "KeyColumns": "_Id",
-                    "DeltaDataADLSFullPath": "abfss://data@synapsesynccav.dfs.core.windows.net/Sample/AdventureWorks/DimProduct",
-                    "DeltaDataDatabricksKeyVaultScope": "DataLakeStorageKey",
-                    "DeltaDataAzureKeyVaultSecretName": "DataLakeStorageKey",
-                    "SynapseSyncDataADLSFullPath": "abfss://data@synapsesynccav.dfs.core.windows.net/Sample/",
-                    "SynapseSyncDataDatabricksKeyVaultScope": "DataLakeStorageKey",
-                    "SynapseSyncDataAzureKeyVaultSecretName": "DataLakeStorageKey",
-                    "SynapseWorkspaceName": "synapsesynccav",
-                    "DropTableFlag": "True",
-                    "SynapseLakehouseSyncKey": "cdae7bfac3427a0029b86bada994290d"
-                }
+                "type": "object"
             }
         },
         "variables": {
@@ -1545,7 +1516,7 @@
             "name": "Synapse Lakehouse Sync"
         },
         "annotations": [],
-        "lastPublishTime": "2022-09-07T18:28:28Z"
+        "lastPublishTime": "2022-09-09T18:40:52Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }

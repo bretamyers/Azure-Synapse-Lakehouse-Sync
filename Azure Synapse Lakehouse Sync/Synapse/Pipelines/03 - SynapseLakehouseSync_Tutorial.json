@@ -9,7 +9,13 @@
                 "type": "DatabricksNotebook",
                 "dependsOn": [
                     {
-                        "activity": "Drop Synapse Tables If Exist",
+                        "activity": "Drop Synapse Tables If Exist DataWarehouse",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "Drop Synapse Tables If Exist DataWarehouse_Finance",
                         "dependencyConditions": [
                             "Succeeded"
                         ]
@@ -167,7 +173,7 @@
                 }
             },
             {
-                "name": "Drop Synapse Tables If Exist",
+                "name": "Drop Synapse Tables If Exist DataWarehouse",
                 "description": "Drop any tables that exists in the Synapse dedicated pool. This allows for the pipeline to be executed repeatedly with the same results.",
                 "type": "Lookup",
                 "dependsOn": [],
@@ -210,6 +216,12 @@
                         "dependencyConditions": [
                             "Succeeded"
                         ]
+                    },
+                    {
+                        "activity": "Check table row counts for both loads Finance",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
                     }
                 ],
                 "userProperties": [],
@@ -245,7 +257,7 @@
                 }
             },
             {
-                "name": "Check table row counts for both loads - No Data Changes",
+                "name": "Check table row counts - No Data Changes",
                 "description": "Query the Synapse logging table to get the row counts from the delta tables and the table in Synapse for each sync process. This should match the original row counts from before since no data changes should have occurred this third run.",
                 "type": "Lookup",
                 "dependsOn": [
@@ -284,13 +296,129 @@
                     },
                     "firstRowOnly": false
                 }
+            },
+            {
+                "name": "Drop Synapse Tables If Exist DataWarehouse_Finance",
+                "description": "Drop any tables that exists in the Synapse dedicated pool. This allows for the pipeline to be executed repeatedly with the same results.",
+                "type": "Lookup",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlDWSource",
+                        "sqlReaderQuery": "DECLARE @sql NVARCHAR(MAX)\n\nSELECT @sql = STRING_AGG(CONVERT(NVARCHAR(MAX), CONCAT('IF OBJECT_ID(''', TABLE_SCHEMA, '.', TABLE_NAME, ''', ''U'') IS NOT NULL DROP TABLE ', TABLE_SCHEMA, '.', TABLE_NAME, ';')), ' ')\nFROM INFORMATION_SCHEMA.TABLES\n\n--PRINT (@sql)\nEXEC (@sql);\n\nSELECT 1 AS a",
+                        "queryTimeout": "24:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Synapse_Managed_Identity",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "ServerName": {
+                                "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+                                "type": "Expression"
+                            },
+                            "DatabaseName": "DataWarehouse_Finance"
+                        }
+                    },
+                    "firstRowOnly": false
+                }
+            },
+            {
+                "name": "Check table row counts for both loads Finance",
+                "description": "Query the Synapse logging table to get the row counts from the delta tables and the table in Synapse for each sync process.",
+                "type": "Lookup",
+                "dependsOn": [
+                    {
+                        "activity": "Execute - Changes - SynapseLakehouseSync",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlDWSource",
+                        "sqlReaderQuery": "SELECT *, ABS(TableRowCountADLS - TableRowCountSynapse) AS Diff\nFROM logging.SynapseLakehouseSync\nORDER BY TableName, RowInsertDateTime\n",
+                        "queryTimeout": "24:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Synapse_Managed_Identity",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "ServerName": {
+                                "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+                                "type": "Expression"
+                            },
+                            "DatabaseName": "DataWarehouse_Finance"
+                        }
+                    },
+                    "firstRowOnly": false
+                }
+            },
+            {
+                "name": "Check table row counts - No Data Changes Finance",
+                "description": "Query the Synapse logging table to get the row counts from the delta tables and the table in Synapse for each sync process. This should match the original row counts from before since no data changes should have occurred this third run.",
+                "type": "Lookup",
+                "dependsOn": [
+                    {
+                        "activity": "Execute - Changes - SynapseLakehouseSync_copy1",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "SqlDWSource",
+                        "sqlReaderQuery": "SELECT *, ABS(TableRowCountADLS - TableRowCountSynapse) AS Diff\nFROM logging.SynapseLakehouseSync\nORDER BY TableName, RowInsertDateTime\n",
+                        "queryTimeout": "24:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "DS_Synapse_Managed_Identity",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "ServerName": {
+                                "value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+                                "type": "Expression"
+                            },
+                            "DatabaseName": "DataWarehouse_Finance"
+                        }
+                    },
+                    "firstRowOnly": false
+                }
             }
         ],
         "folder": {
             "name": "Synapse Lakehouse Sync Tutorial"
         },
         "annotations": [],
-        "lastPublishTime": "2022-09-09T13:55:19Z"
+        "lastPublishTime": "2022-09-09T23:35:37Z"
     },
     "type": "Microsoft.Synapse/workspaces/pipelines"
 }
