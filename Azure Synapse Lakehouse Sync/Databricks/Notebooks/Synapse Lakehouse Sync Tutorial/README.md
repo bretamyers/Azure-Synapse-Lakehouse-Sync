@@ -12,3 +12,4 @@ The following Databricks Notebooks are part of the Tutorial Environment. They ar
 
 **Required:** NO
 
+This Notebook performs synthentic create/update/delete operations on the sample tables. The purpose is to demonstrate how ongoing changes are performed, captured, and synchronized by Azure Synapse Lakehouse Sync.
