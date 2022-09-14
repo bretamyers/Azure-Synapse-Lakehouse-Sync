@@ -6,7 +6,7 @@ The following Databricks Notebooks are part of the Tutorial Environment. They ar
 
 **Required:** NO
 
-This Notebook provides examples that satisfy two requirement of Azure Synapse Lakehouse Sync; Delta 2.x tables and having an identity column in each table.
+This Notebook provides examples that satisfy two requirement of Azure Synapse Lakehouse Sync; 1) Delta 2.x tables, and 2) having an identity column in each table.
 
 ### Converting Parquet to Delta 2.x Tables
 Demonstrates taking several standard parquet tables and converting them to Delta 2.x, which should be considered our Gold Zone. The Delta 2.x tables are created using the Change Data Feed feature, enabled by setting TBLPROPERTIES (delta.enableChangeDataFeed = true) at the table level. Change Data Feed must be enabled for all tables that are synchronized to Synapse Dedicated SQL.
