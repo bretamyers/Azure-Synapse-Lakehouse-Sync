@@ -8,6 +8,8 @@ The following Linked Services should be imported into your Synapse Analytics Wor
 
 This Linked Service uses Managed Identity to authenticate to Databricks. You can create a new Linked Service for Databricks using Managed Identity but be sure to name it **LS_AzureDatabricks_Managed_Identity**. If you import this Linked Service, the below JSON values need to be updated to reflect your Databricks Workspace.
 
+The Synapse Workspace Managed Identity also needs to be given the **Contributor** Azure RBAC role on the Databricks Workspace resource.
+
 ```
 {
     "properties": {
