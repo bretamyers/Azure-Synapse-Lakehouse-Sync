@@ -4,13 +4,13 @@ The following pipelines should be imported into your Synapse Analytics Workspace
 
 ## 01 - SynapseLakehouseSyncTableLoad.json
 
-**Required:** YES
+**Required for Self-Deployment:** YES
 
 This pipeline is called from the **SynapseLakehouseSync** pipeline and should not be modified. It's responsible for the second half of the Azure Synapse Lakehouse Sync process which is importing the Delta table changes into Synapse Dedicated SQL.
 
 ## 02 - SynapseLakehouseSync.json
 
-**Required:** YES
+**Required for Self-Deployment:** YES
 
 This is the primary pipeline for Azure Synapse Lakehouse Sync. It's responsible for executing the Databricks Notebooks which capture the changed data from the Delta tables. It should be scheduled to execute at whatever interval makes sense for your data lake Delta tables to be synchronized to Synapse Dedicated SQL.
 
@@ -35,7 +35,7 @@ DropTableFlag | If the DropTableFlag parameter is true, then drop the Synapse De
 
 ## 03 - SynapseLakehouseSync_Tutorial.json
 
-**Required:** NO
+**Required for Self-Deployment:** NO
 
 This pipeline is used only for the Tutorial Environment. When executed, it demonstrates:
 - Converting the standard parquet sample data to Delta 2.0 using the **Convert Parquet to Delta Tables - AdventureWorks** Databricks Notebook.
