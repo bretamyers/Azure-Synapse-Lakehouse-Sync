@@ -1,6 +1,6 @@
 ## Synapse_Lakehouse_Sync_Metadata.csv
 
-**Required:** YES
+**Required for Self-Deployment:** YES
 
 This file instructs Azure Synapse Lakehouse Sync on what source Delta tables should be synchronized to the Synapse Dedicated SQL Pool and is referenced by the **SynapseLakehouseSync** pipeline using the **StorageAccountNameMetadata** parameter. It should be updated to reflect your environment and located within the Synapse Workspace storage account container that contains the change data. 
 
