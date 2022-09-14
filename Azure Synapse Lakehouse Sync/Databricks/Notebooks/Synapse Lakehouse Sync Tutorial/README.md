@@ -6,7 +6,11 @@ The following Databricks Notebooks are part of the Tutorial Environment. They ar
 
 **Required:** NO
 
+This Notebook provides examples that satisfy two requirement of Azure Synapse Lakehouse Sync; Delta 2.x tables and having an identity column in each table.
 
+### Converting Parquet to Delta 2.x Tables
+
+### Adding an _Id Identity Column
 
 ## Simulate Data Changes - AdventureWorks.dbc
 
