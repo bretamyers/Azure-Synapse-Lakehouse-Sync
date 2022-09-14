@@ -4,7 +4,7 @@ The following Databricks Notebooks are part of the Tutorial Environment. They ar
 
 ## Convert Parquet to Delta Tables - AdventureWorks.dbc
 
-**Required for Self Deployment:** NO
+**Required for Self-Deployment:** NO
 
 This Notebook provides examples that satisfy two requirement of Azure Synapse Lakehouse Sync; 1) Delta 2.x tables, and 2) having an identity column in each table.
 
@@ -16,6 +16,6 @@ An _Id identity column is added to each table with the following syntax BIGINT G
 
 ## Simulate Data Changes - AdventureWorks.dbc
 
-**Required for Self Deployment:** NO
+**Required for Self-Deployment:** NO
 
 This Notebook performs synthentic create/update/delete operations on the sample tables. The purpose is to demonstrate how ongoing changes are performed, captured, and synchronized by Azure Synapse Lakehouse Sync.
