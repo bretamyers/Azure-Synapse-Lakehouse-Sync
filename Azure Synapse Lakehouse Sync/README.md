@@ -53,7 +53,7 @@ If the table exists in the pool and there is data for that pool, database, and t
 8.	Lastly, the pipeline will then run the vacuum and optimize commands on the Synapse Lakehouse Sync tracking delta table.
 
 
-#### Not compatible column data types
+#### Non-compatible Column Data Types
 - ArrayType
 - MapType
 - Nested StructType
@@ -106,7 +106,7 @@ RowInsertDateTime | The datetime the record was inserted into the table.
 
 
 #### Synapse Dedicated SQL: logging.SynapseLakehouseSync
-Contains the record counts of both the data in the source delta table but also the record counts in the target Synapse table.
+Contains the record counts of both the data in the source Delta table but also the record counts in the target Synapse Dedicated SQL table.
 
 Column Name | Description
 -|-
@@ -119,7 +119,7 @@ TableRowCountSynapse | The total row count of the table that is in Synapse
 RowInsertDateTime | The datetime the record was inserted into the table
 
 #### Azure Synapse Lakehouse Sync ADLS Change Table: _SynapseLakehouseSyncTracker
-A delta table that is created in the specified SyncFolderPathFull value from Synapse Lakehouse Sync loading metadata file. The table is used throughout the solution to track the sync's loading progress and to identify what versions of the table have already beed sync'd to Synapse.
+A delta table that is created in the specified SyncFolderPathFull value from Synapse Lakehouse Sync loading metadata file. The table is used throughout the solution to track the sync's loading progress and to identify what versions of the table have already been synchronized to Synapse Dedicated SQL.
 
 Column Name | Description
 -|-
