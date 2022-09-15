@@ -61,18 +61,17 @@ If the table exists in the pool and there is data for that pool, database, and t
 
 
 #### Synaple Lakehouse Sync Metadata File
-|     Column Name           |     Description                                                                                                                                                                                                                              |
-|---------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|     PoolName              |     The name of the target Synapse   dedicated pool                                                                                                                                                                                          |
-|     SchemaName            |     The schema for the table in the   Synapse dedicated pool                                                                                                                                                                                 |
-|     TableName             |     The table name for the table in   Synapse dedicated pool                                                                                                                                                                                 |
-|     KeyColumns            |     The column or columns (comma   separated) that make a row unique in the source table                                                                                                                                                     |
-|     DataFolderPathFull    |     The full path in either https   or abfss to the folder containing the delta files                                                                                                                                                        |
-|     SyncFolderPathFull    |     The full path in either https   or abfss to the folder that will contain the Synapse lakehouse sync tracking   table and change files. It is recommended to use a separate   filesystem/container in the storage account of the data.    |
-
+Column Name | Description
+-|-
+PoolName | The name of the target Synapse   dedicated pool
+SchemaName | The schema for the table in the   Synapse dedicated pool
+TableName | The table name for the table in   Synapse dedicated pool
+KeyColumns | The column or columns (comma   separated) that make a row unique in the source table
+DataFolderPathFull | The full path in either https   or abfss to the folder containing the delta files
+SyncFolderPathFull | The full path in either https   or abfss to the folder that will contain the Synapse lakehouse sync tracking   table and change files. It is recommended to use a separate   filesystem/container in the storage account of the data.
 
 ### Logging Tables
-#### logging.DataProfile
+#### Synapse Dedicated SQL: logging.DataProfile
 This table is used to store the data profiling results of each column in a table. Only full loads will result in data to be profiled and logged into this table.
 |     Column Name              |     Descrption                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 |------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
