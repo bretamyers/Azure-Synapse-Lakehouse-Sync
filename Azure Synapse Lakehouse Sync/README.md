@@ -116,6 +116,8 @@ SchemaName | The Synapse schema name of the table
 TableName | The Synapse table name
 TableRowCountADLS | The total row count for the data in the source delta table on ADLS
 TableRowCountSynapse | The total row count of the table that is in Synapse
+DeltaDataADLSFullPath | The path to the tables delta files
+SynapseSyncDataADLSFullPath | The parent path where the change data in parquet format was stored
 RowInsertDateTime | The datetime the record was inserted into the table
 
 #### Azure Synapse Lakehouse Sync ADLS Change Table: _SynapseLakehouseSyncTracker
