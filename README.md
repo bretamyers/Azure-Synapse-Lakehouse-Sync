@@ -7,7 +7,13 @@
 #### Description
 TODO
 
-#### Using Azure Synapse Lakehouse Sync
+
+
+https://user-images.githubusercontent.com/16770830/192058619-0c5a4664-0662-4e9b-92f2-dbc093dfea6f.mp4
+
+<br>
+
+## Using Azure Synapse Lakehouse Sync
 
 [Self Deployment](/Azure%20Synapse%20Lakehouse%20Sync): Instructions for deploying, configuring, and using Azure Synapse Lakehouse Sync in your own environment.
 
