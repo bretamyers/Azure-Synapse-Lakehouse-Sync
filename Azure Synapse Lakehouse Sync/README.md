@@ -29,7 +29,10 @@ The sync solution is self contained and is self healing. No artifacts need to ex
 
 
 ### Features
-- Create 
+- Auto creates tables in Synapse dedicated pools. The distribution and index for the table determined by profiling the data and using common rules. The data profiling results can be found in the logging.DataProflie table. The SqlCommandCTAS column contains the sql syntax to recreate the table using a different distribution if the chosen distribution does not match the user query patterns.
+- The tables are create with the optimal datatypes for the columns and the sync process will maintain the datatypes if new data is staged that is larger than the datatype in the target table. For example, the delta table has **string** defined for colA and the maximum length of the inital load was only 10 characters so the table in Synapse will have a character length of 10. If data is then inserted into the delta table with a character length of 20, the sync process will detect this and update the target table to have a character length of 20.
+- Replicates tables to the nodes that have a distribution of replicate.
+- Only stages and loads the data that has changed from the previous sync process. We use the delta 2.0 data change feed functionality to determine the most recent record changes. This greatly reduces the duration to load data from ADLS to Synapse.
 
 ### Helper Scripts
 - **Convert Parquet to Delta Tables** - An example spark notebook on how to recreate your existing parquet table on ADLS to a delta table with the \[_Id\] column added. 
