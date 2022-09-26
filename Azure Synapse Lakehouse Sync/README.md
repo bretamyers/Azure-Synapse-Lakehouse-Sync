@@ -138,7 +138,7 @@ DateTimeStart | The datetime start in association of the version number start
 DateTimeEnd | The datetime end in association of the version number end
 InsertDateTime | The insert datetime of the   record
 LoadType | The load type to occur. Either “Full Load” or “Incremental”
-ChangeTypes | The change type(s) to occur. It will be either “full_load” or a combination of “insert”, “delete”, and “update”. Full_load – all of the data from the delta table is staged into ADLS to be loaded into Synapse. Insert – Records identified to be inserted into the Synapse table Update - Records identified to   be updated into the Synapse table Delete - Records identified to be deleted into the Synapse table 
+ChangeTypes | The change type(s) to occur. It will be either “full_load” or a combination of “insert”, “delete”, and “update”. Full_load – all of the data from the delta table is staged into ADLS to be loaded into Synapse. <br><br>Insert - Records identified to be inserted into the Synapse table</br><br>Update - Records identified to   be updated into the Synapse table</br><br>Delete - Records identified to be deleted into the Synapse table</br>
 TableRowCountADLS | The total row count for the data in the source delta table on ADLS
 TableRowCountSynapse | The total row count of the table that is in Synapse
 ADLSStagedFlag | A flag for identifying when the data from the changed data feed has been queried and staged into ADLS.
