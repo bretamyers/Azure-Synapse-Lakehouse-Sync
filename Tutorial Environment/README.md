@@ -54,9 +54,15 @@ The **deployTutorial.sh** script will execute a Bicep deployment for the environ
 - Once in the Synapse workspace, navigate to the <b>Integrate</b> tab on the toolbar to the left and drill down to the <b>SynapseLakehouseSync_Tutorial</b> pipeline in the <b>Synapse Lakehouse Sync Tutorial</b> folder.
 ![image](https://user-images.githubusercontent.com/14877390/192293954-8dee54db-aec4-4e39-9096-936545d2cd94.png)
 ![image](https://user-images.githubusercontent.com/14877390/192295166-2f908cd8-674d-484c-b723-48226b57c89e.png)
-- In the <b>SynapseLakehouseSync_Tutorial</b> pipeline, click on the <b>Add trigger</b> button in the top toolbar and select <b>Trigger now</b> and hit <b>OK<b> in the popup window. This will trigger the execution of the tutorial pipeline.
+- In the <b>SynapseLakehouseSync_Tutorial</b> pipeline, click on the <b>Add trigger</b> button in the top toolbar and select <b>Trigger now</b> and hit <b>OK</b> in the popup window. This will trigger the execution of the tutorial pipeline.
 ![image](https://user-images.githubusercontent.com/14877390/192295875-d731ed9c-1ce1-43f8-8bc9-c187ca60448b.png)
 ![image](https://user-images.githubusercontent.com/14877390/192296498-197f406b-c144-4bfe-a848-2f2ac3cea9cc.png)
-
-
-
+# Azure Synapse Lakehouse Sync Tutorial Steps
+The SynapeLakehouseSync_Tutorial pipeline is designed to simulate data loads that are occur on the data in the gold zone on the data lake and sync those changes to the Synapse workspace dedicated pools. 
+- First we drop any existing tables from the Synapse dedicated pools if any exists. This step is there to allow consistent repeatability when rerunning the pipeline.
+- Next we run an Azure Databricks notebook that converts the sample parquet dataset <b>AdventureWorks_parquet</b> provided in the deployment. This conversion does two primary things.
+  - Creates a new table with change data feed enabled. A new Delta 2.0 functionality.
+  - Adds an additional <b>_Id</b> column. This column is added with the Azure Databricks <b>GENERATED ALWAYS AS IDENTITY</b> feature. This piece is added to simplify and improve the performance the sync process.
+- Now that the parquet dataset has been converted to delta format with the change data feed feature enabled and the _Id column added, we then call the <b>SynapseLakehouseSync</b> pipeline to start the sync process. Since we drop any existing tables in the first step, this will trigger a full_load for all the tables.
+- Once the full load of all the tables to the dedicated pool has completed, we then call an Azure Databricks notebook that simulates data changes to the underlying delta tables. 
+- We then execute the sync process by starting the <b>SynapseLakehouseSync</b> pipeline. Since the data already exists in the Synapse dedicated pools, this triggers an incremental load which will exeucte separate insert, update, and delete statements to get the data in the Synapse dedicated pool up to date.
