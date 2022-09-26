@@ -49,3 +49,14 @@ The **deployTutorial.sh** script will execute a Bicep deployment for the environ
 - Sample Data
 
 # How to use Azure Synapse Lakehouse Sync Tutorial
+- After the deployment of the example environment through the Azure Cloud Shell has completed successfully, make note of the Synapse workspace name that was created and  navigate to the synapse workspace by going [web.azuresynapse.net](web.azuresynapse.net) and selecting the newly deployed workspace from the drop downs.
+![image](https://user-images.githubusercontent.com/14877390/192293164-3a99cef1-c0ae-448c-9d17-9dbbf408c496.png)
+- Once in the Synapse workspace, navigate to the <b>Integrate</b> tab on the toolbar to the left and drill down to the <b>SynapseLakehouseSync_Tutorial</b> pipeline in the <b>Synapse Lakehouse Sync Tutorial</b> folder.
+![image](https://user-images.githubusercontent.com/14877390/192293954-8dee54db-aec4-4e39-9096-936545d2cd94.png)
+![image](https://user-images.githubusercontent.com/14877390/192295166-2f908cd8-674d-484c-b723-48226b57c89e.png)
+- In the <b>SynapseLakehouseSync_Tutorial</b> pipeline, click on the <b>Add trigger</b> button in the top toolbar and select <b>Trigger now</b> and hit <b>OK<b> in the popup window. This will trigger the execution of the tutorial pipeline.
+![image](https://user-images.githubusercontent.com/14877390/192295875-d731ed9c-1ce1-43f8-8bc9-c187ca60448b.png)
+![image](https://user-images.githubusercontent.com/14877390/192296498-197f406b-c144-4bfe-a848-2f2ac3cea9cc.png)
+
+
+
