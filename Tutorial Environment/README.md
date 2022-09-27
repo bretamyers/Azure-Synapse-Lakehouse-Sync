@@ -20,7 +20,7 @@ The following commands should be executed from the Azure Cloud Shell at https://
 - **DW100 Dedicated SQL Pool:** Example of a second data warehouse where only some tables are synchronized from the same Enterprise Data Lake Gold Zone
 - Azure Synapse Lakehouse Sync Pipelines
 
-<b>*Note, two Synapse dedicated pools are created on deployment with the bicep template. These pools will be running after deployment. If you wish to pause the pools to avoid charges, follow the steps [here](https://learn.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/pause-and-resume-compute-portal)*</b>
+<b>*Note, two Synapse dedicated pools are created on deployment with the bicep template. These pools will be running after deployment. If you wish to pause the pools to avoid charges, follow the steps [here](https://learn.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/pause-and-resume-compute-portal).*</b>
 
 #### Azure Databricks Workspace
 - Small Cluster
