@@ -9,8 +9,7 @@ The following commands should be executed from the Azure Cloud Shell at https://
 
 ```
 @Azure:~$ git clone https://github.com/bretamyers/Azure-Synapse-Lakehouse-Sync
-@Azure:~$ cd Azure-Synapse-Lakehouse-Sync
-@Azure:~$ cd Tutorial Environment
+@Azure:~$ cd 'Azure-Synapse-Lakehouse-Sync/Tutorial Environment'
 @Azure:~$ bash deployTutorial.sh 
 ```
 
