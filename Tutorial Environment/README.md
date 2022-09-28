@@ -2,6 +2,7 @@
 
 Whether you're new to the data lake & lakehouse pattern, or exploring how Synapse Lakehouse Sync would work in your environment, this will deploy an end-to-end tutorial environment. We wanted to provide an easy option for you to evaluate and understand how Azure Synapse Lakehouse Sync works with little effort.
 
+<br>
 
 # How to Deploy
 
@@ -12,6 +13,10 @@ The following commands should be executed from the Azure Cloud Shell at https://
 @Azure:~$ cd 'Azure-Synapse-Lakehouse-Sync/Tutorial Environment'
 @Azure:~$ bash deployTutorial.sh 
 ```
+
+https://user-images.githubusercontent.com/16770830/192665633-1ecf047a-caae-44c8-b082-1580caee080c.mp4
+
+<br>
 
 # What's Deployed
 
@@ -36,6 +41,8 @@ The following commands should be executed from the Azure Cloud Shell at https://
 #### Azure Key Vault
 - Secure storage for Azure Data Lake access keys and used by Databricks for authentication
 
+<br>
+
 # What's Configured
 The **deployTutorial.sh** script will execute a Bicep deployment for the environment and then configure the environment with the Azure Synapse Lakehouse Sync artifacts including: 
 
@@ -48,6 +55,8 @@ The **deployTutorial.sh** script will execute a Bicep deployment for the environ
 - Azure Key Vault / Azure Data Lake Storage Access Keys
 - Databricks Workspace / Azure Key Vault Secret Scope
 - Sample Data
+
+<br>
 
 # How to use Azure Synapse Lakehouse Sync Tutorial
 After the deployment of the example environment through the Azure Cloud Shell has completed successfully, make note of the Synapse workspace name that was created and  navigate to the synapse workspace by going [web.azuresynapse.net](web.azuresynapse.net) and selecting the newly deployed workspace from the drop downs.
@@ -63,6 +72,8 @@ In the **SynapseLakehouseSync_Tutorial** pipeline, click on the **Add trigger** 
 
 ![image](https://user-images.githubusercontent.com/14877390/192295875-d731ed9c-1ce1-43f8-8bc9-c187ca60448b.png)
 ![image](https://user-images.githubusercontent.com/14877390/192296498-197f406b-c144-4bfe-a848-2f2ac3cea9cc.png)
+
+<br>
 
 # Azure Synapse Lakehouse Sync Tutorial Steps
 The SynapeLakehouseSync_Tutorial pipeline is designed to simulate data loads that occur on the data in the gold zone on the data lake and sync those changes to the Synapse workspace dedicated pools. 
