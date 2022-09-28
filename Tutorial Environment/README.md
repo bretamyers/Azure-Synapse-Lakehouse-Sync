@@ -2,6 +2,8 @@
 
 Whether you're new to the data lake & lakehouse pattern, or exploring how Synapse Lakehouse Sync would work in your environment, this will deploy an end-to-end tutorial environment. We wanted to provide an easy option for you to evaluate and understand how Azure Synapse Lakehouse Sync works with little effort.
 
+https://user-images.githubusercontent.com/16770830/192665633-1ecf047a-caae-44c8-b082-1580caee080c.mp4
+
 <br>
 
 # How to Deploy
@@ -13,8 +15,6 @@ The following commands should be executed from the Azure Cloud Shell at https://
 @Azure:~$ cd 'Azure-Synapse-Lakehouse-Sync/Tutorial Environment'
 @Azure:~$ bash deployTutorial.sh 
 ```
-
-https://user-images.githubusercontent.com/16770830/192665633-1ecf047a-caae-44c8-b082-1580caee080c.mp4
 
 <br>
 
