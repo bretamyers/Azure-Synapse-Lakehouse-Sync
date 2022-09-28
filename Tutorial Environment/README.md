@@ -61,7 +61,7 @@ The **deployTutorial.sh** script will execute a Bicep deployment for the environ
 # How to use Azure Synapse Lakehouse Sync Tutorial
 After the deployment of the example environment through the Azure Cloud Shell has completed successfully, make note of the Synapse workspace name that was created and  navigate to the synapse workspace by going [web.azuresynapse.net](web.azuresynapse.net) and selecting the newly deployed workspace from the drop downs.
 
-<img src="https://user-images.githubusercontent.com/14877390/192293164-3a99cef1-c0ae-448c-9d17-9dbbf408c496.png" width="600" />
+<img src="https://user-images.githubusercontent.com/16770830/192761589-28e22df8-e236-4a9d-9a15-e180f50e53f4.png" width="600" />
 
 Once in the Synapse workspace, navigate to the **Integrate** tab on the toolbar to the left and drill down to the **SynapseLakehouseSync_Tutorial** pipeline in the **Synapse Lakehouse Sync Tutorial** folder.
 
