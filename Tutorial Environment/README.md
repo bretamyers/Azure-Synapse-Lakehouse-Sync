@@ -102,4 +102,4 @@ The **SynapeLakehouseSync_Tutorial** pipeline is designed to simulate data loads
 
 1. We now execute the **SynapseLakehouseSync** pipeline for a third time. This execution will not load any new data to Synapse Dedicated SQL since no data changes have occurred on the Delta 2 Gold Zone tables.
 
-8. Lastly, we run the two lookup activities again to verify that no data was loaded and that the row counts for the tables remain the same.
+8. Lastly, we run the two lookup activities again to verify that no data was synchronized, and that the row counts for the tables remain the same.
