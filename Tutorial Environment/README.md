@@ -81,16 +81,25 @@ The **SynapeLakehouseSync_Tutorial** pipeline is designed to simulate data loads
 <img src="https://user-images.githubusercontent.com/16770830/192806174-8f1481f0-63d9-4f34-9533-9bcf72adca54.png" />
 
 1. First, we drop any existing tables from the Synapse Dedicated SQL Pools. This allows consistent repeatability when rerunning the **SynapeLakehouseSync_Tutorial** pipeline.
-1. Next we run the **Convert Parquet to Delta Tables - AdventureWorks** Azure Databricks notebook. This tutorial notebook converts the sample Gold Zone parquet dataset (AdventureWorks_parquet) provided in the deployment to Delta 2. This conversion does two primary things:
+1. Next we run the **Convert Parquet to Delta Tables - AdventureWorks** Databricks notebook. This tutorial notebook converts the sample Gold Zone parquet dataset (AdventureWorks_parquet) provided in the deployment to Delta 2. This conversion does two primary things:
 
    - The Delta 2.0 tables are created using the [Change Data Feed](https://docs.delta.io/2.0.0rc1/delta-change-data-feed.html) feature, enabled by setting ```TBLPROPERTIES (delta.enableChangeDataFeed = true)``` at the table level. Change Data Feed must be enabled for all tables that are synchronized to Synapse Dedicated SQL.
    - An **_Id** identity column is added to each table with the following syntax ```BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1)```. Adding the **_Id** identity column makes the synchronization process to Synapse Dedicated SQL simpiler and faster.
 
-1. Now that the parquet dataset has been converted to delta format with the change data feed feature enabled and the _Id column added, we then call the **SynapseLakehouseSync** pipeline to start the sync process. Since we drop any existing tables in the first step, this will trigger a full_load for all the tables. The **SynapseLakehouseSync** pipeline reads the provided sample metadata file **Synapse_Lakehouse_Sync_Metadata.csv**. This [metadata file](https://github.com/bretamyers/Azure-Synapse-Lakehouse-Sync/tree/main/Azure%20Synapse%20Lakehouse%20Sync#synaple-lakehouse-sync-metadata-file) contains the Synapse dedicated pool name, schema name, table name, key columns, delta table locations, and Synapse sync locations for each table to be sync'd. For the tutorial, we'll be loading into two separate Synapse dedicated pools demostrating that you can sync all the tables or a subset of the tables to different pools.
-![image](https://user-images.githubusercontent.com/14877390/192312295-2f752a32-9f7c-4d89-8959-eae508e6d702.png)
-1. Once the full load of all the tables to the dedicated pool has completed, we then call an Azure Databricks notebook that simulates data changes to the underlying delta tables. The changes include update, inserts, deletes, and data type length changes. 
-1. We then execute the sync process by starting the **SynapseLakehouseSync** pipeline. Since the tables already exist in the Synapse dedicated pools, this triggers an incremental load which will execute separate insert, update, and delete statements to get the data in the Synapse dedicated pool up to date.
-1. Now that we've executed two Synapse sync's, we then call two lookup activities to check the row counts for each table querying the logging.SynapseLakehouseSync table that captures the row counts for the data in the delta tables and the row counts of the tables in the Synapse dedicated pools. The Diff column should be zero for all the tables.
-1. Now we pause the pipeline for 10 seconds using a wait activity.
-1. We execute the **SynapseLakehouseSync** pipeline for a third time. This execution will not load any new data to Synapse since no data changes have occurred on the delta tables. 
-1. Lastly, we run the two lookup activities again to verify that no data was loaded and that the row counts for the tables remain the same.
+1. After the Delta 2 tables are created in the Gold Zone, we execute the primary **SynapseLakehouseSync** pipeline to start the synchronization process. The **SynapseLakehouseSync** pipeline reads the provided [Synapse_Lakehouse_Sync_Metadata.csv](https://github.com/bretamyers/Azure-Synapse-Lakehouse-Sync/tree/main/Azure%20Synapse%20Lakehouse%20Sync#synaple-lakehouse-sync-metadata-file) metadata file to understand what tables should be synchronized. Because none of the tables exist exist in Synapse Dedicated SQL, a full load will be triggered. 
+
+   You'll notice the sample metadata file contains two separate Synapse Dedicated SQL Pools. This demonstrates synchronizating all tables, and a subset of tables, to different Synapse Dedicated SQL Pools.
+
+   ![image](https://user-images.githubusercontent.com/14877390/192312295-2f752a32-9f7c-4d89-8959-eae508e6d702.png)
+
+1. Once the full load of all tables to the Synapse Dedicated SQL Pools have completed, we then run the **Simulate Data Changes - AdventureWorks**  Databricks notebook. This notebook simulates data changes to the underlying Delta 2 tables. The changes include updates, inserts, deletes, and data type length changes.
+
+1. We execute the primary **SynapseLakehouseSync** pipeline to start the synchronization process again. Since the tables already exist in the Synapse Dedicated SQL Pools, an incremental load is triggered. It will extract the changed data from the Delta 2 Gold Zone tables and stage them in the Synapse storage account **synapsesync** container. It will then execute separate insert, update, and delete statements on the Dedicated SQL Pools to synchronize the tables.
+
+1. Now that we've executed two synchronization processes, we run two lookup activities to check the row counts for each table. The **logging.SynapseLakehouseSync** table in each Dedicated SQL Pool contains row counts for the Delta 2 Gold Zone tables, along with the Synapse Dedicated SQL Pool tables. The **Diff** output in the lookup activity results should be 0, indicating the table record counts are the same and therefore synchronized.
+
+1. The pipeline pauses for 10 seconds using a wait activity.
+
+1. We now execute the **SynapseLakehouseSync** pipeline for a third time. This execution will not load any new data to Synapse Dedicated SQL since no data changes have occurred on the Delta 2 Gold Zone tables.
+
+8. Lastly, we run the two lookup activities again to verify that no data was loaded and that the row counts for the tables remain the same.
