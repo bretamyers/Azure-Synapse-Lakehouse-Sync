@@ -50,14 +50,20 @@ The **deployTutorial.sh** script will execute a Bicep deployment for the environ
 - Sample Data
 
 # How to use Azure Synapse Lakehouse Sync Tutorial
-- After the deployment of the example environment through the Azure Cloud Shell has completed successfully, make note of the Synapse workspace name that was created and  navigate to the synapse workspace by going [web.azuresynapse.net](web.azuresynapse.net) and selecting the newly deployed workspace from the drop downs.
+After the deployment of the example environment through the Azure Cloud Shell has completed successfully, make note of the Synapse workspace name that was created and  navigate to the synapse workspace by going [web.azuresynapse.net](web.azuresynapse.net) and selecting the newly deployed workspace from the drop downs.
+
 ![image](https://user-images.githubusercontent.com/14877390/192293164-3a99cef1-c0ae-448c-9d17-9dbbf408c496.png)
-- Once in the Synapse workspace, navigate to the <b>Integrate</b> tab on the toolbar to the left and drill down to the <b>SynapseLakehouseSync_Tutorial</b> pipeline in the <b>Synapse Lakehouse Sync Tutorial</b> folder.
+
+Once in the Synapse workspace, navigate to the **Integrate** tab on the toolbar to the left and drill down to the **SynapseLakehouseSync_Tutorial** pipeline in the **Synapse Lakehouse Sync Tutorial** folder.
+
 ![image](https://user-images.githubusercontent.com/14877390/192541566-7b4a0ffa-13f9-4bf3-8607-f175f514de7b.png)
 ![image](https://user-images.githubusercontent.com/14877390/192542004-d036d872-d2b7-4834-ac98-24af7e75a2b3.png)
-- In the <b>SynapseLakehouseSync_Tutorial</b> pipeline, click on the <b>Add trigger</b> button in the top toolbar and select <b>Trigger now</b> and hit <b>OK</b> in the popup window. This will trigger the execution of the tutorial pipeline.
+
+In the **SynapseLakehouseSync_Tutorial** pipeline, click on the **Add trigger** button in the top toolbar and select **Trigger now** and hit **OK** in the popup window. This will trigger the execution of the tutorial pipeline.
+
 ![image](https://user-images.githubusercontent.com/14877390/192295875-d731ed9c-1ce1-43f8-8bc9-c187ca60448b.png)
 ![image](https://user-images.githubusercontent.com/14877390/192296498-197f406b-c144-4bfe-a848-2f2ac3cea9cc.png)
+
 # Azure Synapse Lakehouse Sync Tutorial Steps
 The SynapeLakehouseSync_Tutorial pipeline is designed to simulate data loads that occur on the data in the gold zone on the data lake and sync those changes to the Synapse workspace dedicated pools. 
 - First, we drop any existing tables from the Synapse dedicated pools if any exist. This step is there to allow consistent repeatability when rerunning the pipeline.
