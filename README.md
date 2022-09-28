@@ -5,8 +5,6 @@
 *This solution was built for demoing the art of the possible when combining the best of spark with the best of data warehousing. It is not intended to be used in production environments.*
 
 #### Description
-TODO
-
 Azure Synapse Lakehouse Sync provides an easy solution to synchronizing modeled Gold Zone data from your data lake, to your Synapse Analytics Data Warehouse. Through a series of Databricks notebooks and Synapse Analytics pipelines, it offers a working example of how to continually synchronize your tables.
 
 Additionally, it leverages the new [Change Data Feed](https://docs.delta.io/2.0.0rc1/delta-change-data-feed.html) capabilities in the Delta 2.x format to better track changes to your Gold Zone tables. This allows for significantly easier and more performant extracts of changed data. Best practices are then used to stage, ingest, and store data in the most performant and optimized way within Azure Synapse Dedicated SQL. The synchronization schedule can be configured for whatever interval works best for your environment, whether it's every 10 minutes or daily.
