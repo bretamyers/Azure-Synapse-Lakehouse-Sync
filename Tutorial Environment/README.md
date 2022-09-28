@@ -25,7 +25,7 @@ https://user-images.githubusercontent.com/16770830/192665633-1ecf047a-caae-44c8-
 - **DW100 Dedicated SQL Pool:** Example of a second data warehouse where only some tables are synchronized from the same Enterprise Data Lake Gold Zone
 - Azure Synapse Lakehouse Sync Pipelines
 
-<b>*Note, two Synapse dedicated pools are created on deployment with the bicep template. These pools will be running after deployment. If you wish to pause the pools to avoid charges, follow the steps [here](https://learn.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/pause-and-resume-compute-portal).*</b>
+> NOTE: Two Synapse Dedicatd SQL Pools are created and running upon deployment. If you wish to pause the Dedicated SQL Pools to avoid charges, follow the steps [here](https://learn.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/pause-and-resume-compute-portal).
 
 #### Azure Databricks Workspace
 - Small Cluster
@@ -61,17 +61,17 @@ The **deployTutorial.sh** script will execute a Bicep deployment for the environ
 # How to use Azure Synapse Lakehouse Sync Tutorial
 After the deployment of the example environment through the Azure Cloud Shell has completed successfully, make note of the Synapse workspace name that was created and  navigate to the synapse workspace by going [web.azuresynapse.net](web.azuresynapse.net) and selecting the newly deployed workspace from the drop downs.
 
-![image](https://user-images.githubusercontent.com/14877390/192293164-3a99cef1-c0ae-448c-9d17-9dbbf408c496.png)
+<img src="https://user-images.githubusercontent.com/14877390/192293164-3a99cef1-c0ae-448c-9d17-9dbbf408c496.png" width="600" />
 
 Once in the Synapse workspace, navigate to the **Integrate** tab on the toolbar to the left and drill down to the **SynapseLakehouseSync_Tutorial** pipeline in the **Synapse Lakehouse Sync Tutorial** folder.
 
-![image](https://user-images.githubusercontent.com/14877390/192541566-7b4a0ffa-13f9-4bf3-8607-f175f514de7b.png)
-![image](https://user-images.githubusercontent.com/14877390/192542004-d036d872-d2b7-4834-ac98-24af7e75a2b3.png)
+<img src="https://user-images.githubusercontent.com/14877390/192541566-7b4a0ffa-13f9-4bf3-8607-f175f514de7b.png" width="600" />
+<img src="https://user-images.githubusercontent.com/14877390/192542004-d036d872-d2b7-4834-ac98-24af7e75a2b3.png" width="600" />
 
 In the **SynapseLakehouseSync_Tutorial** pipeline, click on the **Add trigger** button in the top toolbar and select **Trigger now** and hit **OK** in the popup window. This will trigger the execution of the tutorial pipeline.
 
-![image](https://user-images.githubusercontent.com/14877390/192295875-d731ed9c-1ce1-43f8-8bc9-c187ca60448b.png)
-![image](https://user-images.githubusercontent.com/14877390/192296498-197f406b-c144-4bfe-a848-2f2ac3cea9cc.png)
+<img src="https://user-images.githubusercontent.com/14877390/192295875-d731ed9c-1ce1-43f8-8bc9-c187ca60448b.png" width="600" />
+<img src="https://user-images.githubusercontent.com/14877390/192296498-197f406b-c144-4bfe-a848-2f2ac3cea9cc.png" width="400" />
 
 <br>
 
