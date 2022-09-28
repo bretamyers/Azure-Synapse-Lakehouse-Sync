@@ -75,7 +75,7 @@ In the **SynapseLakehouseSync_Tutorial** pipeline, click on the **Add trigger** 
 
 <br>
 
-# Azure Synapse Lakehouse Sync Tutorial Steps
+# Tutorial Pipeline Steps
 The **SynapeLakehouseSync_Tutorial** pipeline is designed to simulate data loads that occur in the Gold Zone on the data lake and synchronize those changes to two Synapse Dedicated SQL Pools. 
 
 <img src="https://user-images.githubusercontent.com/16770830/192806174-8f1481f0-63d9-4f34-9533-9bcf72adca54.png" />
