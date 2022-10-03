@@ -1,9 +1,5 @@
 # Azure Synapse Lakehouse Sync
 
-
-#### Disclaimer
-*This solution was built for demoing the art of the possible when combining the best of spark with the best of data warehousing. It is not intended to be used in production environments.*
-
 #### Description
 Azure Synapse Lakehouse Sync provides an easy solution to synchronizing modeled Gold Zone data from your data lake, to your Synapse Analytics Data Warehouse. Through a series of Databricks notebooks and Synapse Analytics pipelines, it offers a working example of how to continually synchronize your tables.
 
