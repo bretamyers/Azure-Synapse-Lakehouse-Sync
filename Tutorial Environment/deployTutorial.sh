@@ -84,6 +84,15 @@ function userOutput () {
     fi
 }
 
+# Validate if the passed value is a GUID
+function validateGUID () {
+    if [[ ${1} =~ ^\{?[A-F0-9a-f]{8}-[A-F0-9a-f]{4}-[A-F0-9a-f]{4}-[A-F0-9a-f]{4}-[A-F0-9a-f]{12}\}?$ ]]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
 # Try and determine if we're executing from within the Azure Cloud Shell
 if [ ! "${AZUREPS_HOST_ENVIRONMENT}" = "cloud-shell/1.0" ]; then
     output "ERROR" "It doesn't appear you are executing this from the Azure Cloud Shell. Please use Bash in the Azure Cloud Shell at https://shell.azure.com"
@@ -109,6 +118,21 @@ for value in "${accountDetails[@]}"; do
         exit 1;
     fi
 done
+
+# Get the users Azure AD Object Id from the Bicep main.parameters.json
+#azureUsernameObjectId=$(jq -r .parameters.synapseAzureADAdminObjectId.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
+
+# Validate the users Azure AD Object Id is a valid GUID or that the value was manually set in main.parameters.json
+#if [ $(validateGUID ${accountDetails[azureUsernameObjectId]}) = "false" ]; then
+#    if [ $(validateGUID ${azureUsernameObjectId}) = "false" ]; then
+    if [ $(validateGUID ${accountDetails[azureUsernameObjectId]}) = "false" ]; then
+        userOutput "ERROR" "Unable to fetch the Azure AD Object Id for your user. Are you using an Azure AD Guest/External Account? This is not currently supported."
+        exit 1;
+    fi
+#    else
+#        accountDetails[azureUsernameObjectId]=${azureUsernameObjectId}
+#    fi
+#fi
 
 # Display some environment details to the user
 userOutput "RESULT" "Azure Subscription:" ${accountDetails[azureSubscriptionName]}
