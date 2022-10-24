@@ -289,12 +289,15 @@ done
 tomorrowsDate=$(date --date="tomorrow" +%Y-%m-%d)
 synapseStorageAccountSAS=$(az storage container generate-sas --account-name ${bicepDeploymentDetails[synapseStorageAccountName]} --name synapsesync --permissions rwal --expiry ${tomorrowsDate} --only-show-errors --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 enterpriseDataLakeStorageAccountSAS=$(az storage container generate-sas --account-name ${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]} --name gold --permissions rwal --expiry ${tomorrowsDate} --only-show-errors --output tsv 2>&1 | sed 's/[[:space:]]*//g')
-sampleDataStorageSAS="?sv=2021-06-08&st=2022-08-01T04%3A00%3A00Z&se=2023-08-01T04%3A00%3A00Z&sr=c&sp=rl&sig=DjC4dPo5AKYkNFplik2v6sH%2Fjhl2k1WTzna%2F1eV%2BFv0%3D"
+
+# Source Sample Data Storage Account
+sampleDataStorageAccount="synapseacceleratorsdata"
+sampleDataStorageSAS="?sv=2021-04-10&st=2022-10-01T04%3A00%3A00Z&se=2023-12-01T05%3A00%3A00Z&sr=c&sp=rl&sig=eorb8V3hDel5dR4%2Ft2JsWVwTBawsxIOUYADj4RiKeDo%3D"
 
 # Copy sample data
 userOutput "STATUS" "Copying the sample data..."
-sampleDataCopy=$(az storage copy -s "https://synapseanalyticspocdata.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_changes/${sampleDataStorageSAS}" -d "https://${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}.blob.core.windows.net/gold/Sample?${enterpriseDataLakeStorageAccountSAS}" --recursive 2>&1 >> $deploymentLogFile)
-sampleDataCopy=$(az storage copy -s "https://synapseanalyticspocdata.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_parquet/${sampleDataStorageSAS}" -d "https://${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}.blob.core.windows.net/gold/Sample?${enterpriseDataLakeStorageAccountSAS}" --recursive 2>&1 >> $deploymentLogFile)
+sampleDataCopy=$(az storage copy -s "https://${sampleDataStorageAccount}.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_changes/${sampleDataStorageSAS}" -d "https://${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}.blob.core.windows.net/gold/Sample?${enterpriseDataLakeStorageAccountSAS}" --recursive 2>&1 >> $deploymentLogFile)
+sampleDataCopy=$(az storage copy -s "https://${sampleDataStorageAccount}.blob.core.windows.net/sample/Synapse Lakehouse Sync/AdventureWorks_parquet/${sampleDataStorageSAS}" -d "https://${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}.blob.core.windows.net/gold/Sample?${enterpriseDataLakeStorageAccountSAS}" --recursive 2>&1 >> $deploymentLogFile)
 
 # Update the Auto Loader Metadata file template with the correct storage account and then upload it
 enterpriseDataLakeScopeSecretName="EnterpriseDataLakeAccountKey"
