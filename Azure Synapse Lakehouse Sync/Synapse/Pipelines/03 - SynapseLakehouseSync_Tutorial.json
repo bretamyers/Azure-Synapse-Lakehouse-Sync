@@ -9,7 +9,7 @@
                 "type": "ExecutePipeline",
                 "dependsOn": [
                     {
-                        "activity": "Until - ParquetToDeltaSuccessFlag",
+                        "activity": "Spark - Convert Parquet to Delta Tables",
                         "dependencyConditions": [
                             "Succeeded"
                         ]
@@ -374,91 +374,43 @@
                 }
             },
             {
-                "name": "Until - ParquetToDeltaSuccessFlag",
-                "type": "Until",
+                "name": "Spark - Convert Parquet to Delta Tables",
+                "description": "Run an Azure Databricks notebook that will convert 6 tables in parquet format to delta 2.0 format with change data feed enabled and adding an _Id column.",
+                "type": "DatabricksNotebook",
                 "dependsOn": [
-                    {
-                        "activity": "Drop Synapse Tables If Exist DataWarehouse_Finance",
-                        "dependencyConditions": [
-                            "Succeeded"
-                        ]
-                    },
                     {
                         "activity": "Drop Synapse Tables If Exist DataWarehouse",
                         "dependencyConditions": [
                             "Succeeded"
                         ]
+                    },
+                    {
+                        "activity": "Drop Synapse Tables If Exist DataWarehouse_Finance",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
                     }
                 ],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 20,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
                 "userProperties": [],
                 "typeProperties": {
-                    "expression": {
-                        "value": "@equals(variables('ParquetToDeltaSuccessFlag'), true)",
-                        "type": "Expression"
-                    },
-                    "activities": [
-                        {
-                            "name": "Spark - Convert Parquet to Delta Tables",
-                            "description": "Run an Azure Databricks notebook that will convert 6 tables in parquet format to delta 2.0 format with change data feed enabled and adding an _Id column.",
-                            "type": "DatabricksNotebook",
-                            "dependsOn": [],
-                            "policy": {
-                                "timeout": "7.00:00:00",
-                                "retry": 0,
-                                "retryIntervalInSeconds": 30,
-                                "secureOutput": false,
-                                "secureInput": false
-                            },
-                            "userProperties": [],
-                            "typeProperties": {
-                                "notebookPath": "/Synapse Lakehouse Sync Tutorial/Convert Parquet to Delta Tables - AdventureWorks",
-                                "baseParameters": {
-                                    "SynapseLakehouseSyncParameters": {
-                                        "value": "@concat('{\"DatabaseName\":\"AdventureWorks\", \"SynapseWorkspaceName\":\"', pipeline().DataFactory, '\"\n, \"ParquetDataADLSFullPath\":\"abfss://gold@enterprisedatalake', string(split(pipeline().DataFactory, 'sync')[1]), '.dfs.core.windows.net/Sample/\"\n, \"ParquetDataDatabricksKeyVaultScope\":\"AzureKeyVaultScope\"\n, \"ParquetDataAzureKeyVaultSecretName\":\"EnterpriseDataLakeAccountKey\"\n}')",
-                                        "type": "Expression"
-                                    }
-                                }
-                            },
-                            "linkedServiceName": {
-                                "referenceName": "LS_AzureDatabricks_Managed_Identity",
-                                "type": "LinkedServiceReference"
-                            }
-                        },
-                        {
-                            "name": "Set variable - ParquetToDeltaSuccessFlag",
-                            "type": "SetVariable",
-                            "dependsOn": [
-                                {
-                                    "activity": "Spark - Convert Parquet to Delta Tables",
-                                    "dependencyConditions": [
-                                        "Succeeded"
-                                    ]
-                                }
-                            ],
-                            "userProperties": [],
-                            "typeProperties": {
-                                "variableName": "ParquetToDeltaSuccessFlag",
-                                "value": true
-                            }
-                        },
-                        {
-                            "name": "Wait - 30 seconds",
-                            "type": "Wait",
-                            "dependsOn": [
-                                {
-                                    "activity": "Spark - Convert Parquet to Delta Tables",
-                                    "dependencyConditions": [
-                                        "Failed"
-                                    ]
-                                }
-                            ],
-                            "userProperties": [],
-                            "typeProperties": {
-                                "waitTimeInSeconds": 30
-                            }
+                    "notebookPath": "/Synapse Lakehouse Sync Tutorial/Convert Parquet to Delta Tables - AdventureWorks",
+                    "baseParameters": {
+                        "SynapseLakehouseSyncParameters": {
+                            "value": "@concat('{\"DatabaseName\":\"AdventureWorks\", \"SynapseWorkspaceName\":\"', pipeline().DataFactory, '\"\n, \"ParquetDataADLSFullPath\":\"abfss://gold@enterprisedatalake', string(split(pipeline().DataFactory, 'sync')[1]), '.dfs.core.windows.net/Sample/\"\n, \"ParquetDataDatabricksKeyVaultScope\":\"AzureKeyVaultScope\"\n, \"ParquetDataAzureKeyVaultSecretName\":\"EnterpriseDataLakeAccountKey\"\n}')",
+                            "type": "Expression"
                         }
-                    ],
-                    "timeout": "0.00:10:00"
+                    }
+                },
+                "linkedServiceName": {
+                    "referenceName": "LS_AzureDatabricks_Managed_Identity",
+                    "type": "LinkedServiceReference"
                 }
             }
         ],
