@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "azureRegion": {
-      "value": "eastus"  
+      "value": "eastus2"  
     },
     "resourceGroupName": {
       "value": "Azure-Synapse-Lakehouse-Sync"
