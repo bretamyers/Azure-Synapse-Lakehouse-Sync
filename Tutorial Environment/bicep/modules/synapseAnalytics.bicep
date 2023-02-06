@@ -160,7 +160,7 @@ resource synapseSQLSecondPoolGeoBackups 'Microsoft.Synapse/workspaces/sqlPools/g
 // Synapse Spark Pool
 //   https://learn.microsoft.com/en-us/azure/synapse-analytics/quickstart-create-apache-spark-pool-studio
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/bigdatapools?pivots=deployment-language-bicep
-resource symbolicname 'Microsoft.Synapse/workspaces/bigDataPools@2021-06-01' = {
+resource synapseSparkPool 'Microsoft.Synapse/workspaces/bigDataPools@2021-06-01' = {
   name: synapseSparkPoolName
   location: azureRegion
   parent: synapseAnalyticsWorkspace
