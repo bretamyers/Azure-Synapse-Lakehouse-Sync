@@ -180,7 +180,7 @@ resource symbolicname 'Microsoft.Synapse/workspaces/bigDataPools@2021-06-01' = {
     }
     nodeCount: 5
     nodeSize: 'small'
-    nodeSizeFamily: 'Memory Optimized'
+    nodeSizeFamily: 'MemoryOptimized'
     sparkVersion: '3.3'
   }
 }
