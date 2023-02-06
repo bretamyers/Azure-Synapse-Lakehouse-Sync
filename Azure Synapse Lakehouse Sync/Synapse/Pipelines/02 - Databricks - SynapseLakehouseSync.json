@@ -1,0 +1,711 @@
+{
+	"name": "Databricks - SynapseLakehouseSync",
+	"properties": {
+		"description": "The pipeline that orchestrates the artifacts the sync the delta table to a Synapse dedicated pool.",
+		"activities": [
+			{
+				"name": "Lookup - Sync Pools",
+				"description": "Query the csv data in the StorageAccountNameMetadata parameter ADLS location. This gets the table names and locations for the data to be sync'd to the Synapse dedicated pool.",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "@concat('SELECT PoolName, SchemaName, TableName, KeyColumns\n,DeltaDataADLSFullPath, DeltaDataDatabricksKeyVaultScope, DeltaDataAzureKeyVaultSecretName\n,SynapseSyncDataADLSFullPath, SynapseSyncDataDatabricksKeyVaultScope, SynapseSyncDataAzureKeyVaultSecretName\n,''', pipeline().DataFactory, ''' AS SynapseWorkspaceName\n FROM OPENROWSET(\n        BULK ''', pipeline().parameters.StorageAccountNameMetadata, ''',\n        FORMAT = ''CSV'',\n\t\tPARSER_VERSION = ''2.0'', \n        HEADER_ROW = TRUE\n    ) AS [result]')",
+							"type": "Expression"
+						},
+						"queryTimeout": "24:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_Synapse_Managed_Identity",
+						"type": "DatasetReference",
+						"parameters": {
+							"ServerName": {
+								"value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+								"type": "Expression"
+							},
+							"DatabaseName": "master"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach - Lakehouse Table",
+				"description": "Loop through the items in the PoolSchemaTableArray variable. This will call the Azure Databricks notebook that will read and write the CDC changes from each delta table to a staging location in ADLS.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Pool Schema",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "ForEach - Create Delta Sync Tracking Tables",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('MetadataArray')",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Spark - Synapse Lakehouse Sync ADLS",
+							"description": "An Azure Databricks notebook that will read the change data feed of the delta table and write the changes out to ADLS. ",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/Synapse Lakehouse Sync/Synapse Lakehouse Sync ADLS",
+								"baseParameters": {
+									"SynapseLakehouseSyncParameters": {
+										"value": "@string(item())",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_AzureDatabricks_Managed_Identity",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Append variable - DatabricksOutputArray",
+							"description": "Append the output from the Spark - Synapse Lakehouse Sync ADLS activity to the DatabricksOutputArray variable. This is used downstream in the pipeline to identify what changes types have occurred (full_load or incremental) and used for logging purposes.",
+							"type": "AppendVariable",
+							"dependsOn": [
+								{
+									"activity": "Spark - Synapse Lakehouse Sync ADLS",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "DatabricksOutputArray",
+								"value": {
+									"value": "@activity('Spark - Synapse Lakehouse Sync ADLS').Output.runOutput",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set Runtime Variables",
+				"description": "Set the pipeline runtime variables. Used for logging/tracking purposes to identify what pipeline run loaded the data.",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "PipelineValues",
+					"value": {
+						"value": "@array(json(concat('{\n\"PipelineRunId\": \"', pipeline().RunId ,'\"'\n,',\"PipelineStartDate\": \"', formatDateTime(convertFromUtc(pipeline().TriggerTime, 'Eastern Standard Time'), 'yyyyMMdd'), '\"'\n,',\"PipelineStartDateTime\": \"', formatDateTime(convertFromUtc(pipeline().TriggerTime, 'Eastern Standard Time'), 'yyyy-MM-dd HH:mm:ss'), '\"'\n,'}')))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach - Pool Schema",
+				"description": "Loop through each unique combination PoolName and SchemaName from the Lookup - Distinct Pools Schema activity.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Lookup - Distinct Pools Schema",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lookup - Distinct Pools Schema').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Create Schema if not exists",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlDWSource",
+									"sqlReaderQuery": {
+										"value": "@CONCAT('EXECUTE AS user = ''Userstaticrc10'' \nIF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE [name] = ''', item().SchemaName, ''') EXEC(''CREATE SCHEMA ', item().SchemaName, ''');SELECT 1 AS a')",
+										"type": "Expression"
+									},
+									"queryTimeout": "24:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_Synapse_Managed_Identity",
+									"type": "DatasetReference",
+									"parameters": {
+										"ServerName": {
+											"value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+											"type": "Expression"
+										},
+										"DatabaseName": {
+											"value": "@item().PoolName",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "ForEach - Pool Schema Table",
+				"description": "Loop through the rows from the Lookup - Sync Pools activity and query the Synapse dedicated pool to check if the table already exists. Append the output to the PoolSchemaTableArray variable.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Lookup - Sync Pools",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Set Runtime Variables",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lookup - Sync Pools').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Lookup - Check if table exists",
+							"description": "Query the Synapse dedicated pool to check if the table already exists.",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlDWSource",
+									"sqlReaderQuery": {
+										"value": "@concat('SELECT COALESCE((SELECT ''True'' FROM sys.tables WHERE SCHEMA_NAME(schema_id) = ''', item().SchemaName, ''' AND [name] = ''', item().TableName, '''), ''False'') AS ExistsFlagSynapse\n\t\t,''', item().PoolName, ''' AS PoolName\n\t\t,''', item().SchemaName, ''' AS SchemaName\n\t\t,''', item().TableName, ''' AS TableName\n\t\t,''', item().KeyColumns, ''' AS KeyColumns\n\t\t,''', item().DeltaDataADLSFullPath, ''' AS DeltaDataADLSFullPath\n\t\t,''', item().DeltaDataDatabricksKeyVaultScope, ''' AS DeltaDataDatabricksKeyVaultScope\n\t\t,''', item().DeltaDataAzureKeyVaultSecretName, ''' AS DeltaDataAzureKeyVaultSecretName\n\t\t,''', item().SynapseSyncDataADLSFullPath, ''' AS SynapseSyncDataADLSFullPath\n\t\t,''', item().SynapseSyncDataDatabricksKeyVaultScope, ''' AS SynapseSyncDataDatabricksKeyVaultScope\n\t\t,''', item().SynapseSyncDataAzureKeyVaultSecretName, ''' AS SynapseSyncDataAzureKeyVaultSecretName\n\t\t,''', item().SynapseWorkspaceName, ''' AS SynapseWorkspaceName\n\t\t,''', variables('DropTableFlag'), ''' AS DropTableFlag\n')",
+										"type": "Expression"
+									},
+									"queryTimeout": "24:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_Synapse_Managed_Identity",
+									"type": "DatasetReference",
+									"parameters": {
+										"ServerName": {
+											"value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+											"type": "Expression"
+										},
+										"DatabaseName": {
+											"value": "@item().PoolName",
+											"type": "Expression"
+										}
+									}
+								},
+								"firstRowOnly": true
+							}
+						},
+						{
+							"name": "Append variable - MetadataArray",
+							"description": "Append the output from the Lookup - Check if table exists activity to the MetadataArray variable.",
+							"type": "AppendVariable",
+							"dependsOn": [
+								{
+									"activity": "Lookup - Check if table exists",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "MetadataArray",
+								"value": {
+									"value": "@activity('Lookup - Check if table exists').output.firstRow",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "ForEach - Create and Load the Synapse Table",
+				"description": "Loop through each item from the DatabricksOutputArray variable and call the SynapseLakehouseSyncTableLoad pipeline if changes were detected from the previous load.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Lakehouse Table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "ForEach - Create Synapse Logging Tables",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('DatabricksOutputArray')",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"activities": [
+						{
+							"name": "If Condition - Changes Detected",
+							"description": "Check if the ChangeTypes item is empty. If its empty, then no changes have occurred on the delta tables since the last Synapse sync process. We do not need to call the SynapseLakehouseSyncTableLoad pipeline in this case.",
+							"type": "IfCondition",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@not(empty(item().ChangeTypes))",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Execute - SynapseLakehouseSyncTableLoad",
+										"description": "Execute the SynapseLakehouseSyncTableLoad pipeline to load the data staged in ADLS to the Synapse dedicated pool.",
+										"type": "ExecutePipeline",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"pipeline": {
+												"referenceName": "Databricks - SynapseLakehouseSyncTableLoad",
+												"type": "PipelineReference"
+											},
+											"waitOnCompletion": true,
+											"parameters": {
+												"PipelineValue": {
+													"value": "@variables('PipelineValues')",
+													"type": "Expression"
+												},
+												"DatabricksOutput": {
+													"value": "@item()",
+													"type": "Expression"
+												}
+											}
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "ForEach - Change Tracking Table",
+				"description": "Loop through the items in from the Lookup - Get Distinct SynapseLakehouseTracking Tables activity. This is used to run the vacuum and optimize commands on the each of the _SynapseLakehouseSync delta tables.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Lookup - Get Distinct SynapseLakehouseTracking Tables",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lookup - Get Distinct SynapseLakehouseTracking Tables').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Spark - Synapse Lakehouse Sync Tracking Table Optimize",
+							"description": "Run the vacuum with 0 hour retention and optimize commands for the _SynapseLakehouseSync delta table.",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/Synapse Lakehouse Sync/Synapse Lakehouse Sync Tracking Table Optimize",
+								"baseParameters": {
+									"SynapseLakehouseSyncParameters": {
+										"value": "@string(item())",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_AzureDatabricks_Managed_Identity",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Lookup - Get Distinct SynapseLakehouseTracking Tables",
+				"description": "Get the distinct PoolName and SyncFolderPathFull combinations from the Lookup - Sync Pool activity. This is used to run the vacuum and optimize commands on the each of the _SynapseLakehouseSync delta tables.",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Create and Load the Synapse Table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "@concat('DECLARE @json NVARCHAR(MAX)  = '''\n, activity('Lookup - Sync Pools').output.value\n, ''' \n\n;WITH cte AS\n(\n\tSELECT DISTINCT PoolName, SynapseWorkspaceName\n\t\t,SynapseSyncDataADLSFullPath, SynapseSyncDataDatabricksKeyVaultScope, SynapseSyncDataAzureKeyVaultSecretName\n\tFROM OPENJSON(@json)\n\tWITH\n\t(\n\t\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t\t,SynapseWorkspaceName NVARCHAR(1000) ''$.SynapseWorkspaceName''\n\t\t,DeltaDataADLSFullPath NVARCHAR(1000) ''$.DeltaDataADLSFullPath''\n\t\t,SynapseSyncDataADLSFullPath NVARCHAR(1000) ''$.SynapseSyncDataADLSFullPath''\n\t\t,SynapseSyncDataDatabricksKeyVaultScope NVARCHAR(1000) ''$.SynapseSyncDataDatabricksKeyVaultScope''\n\t\t,SynapseSyncDataAzureKeyVaultSecretName NVARCHAR(1000) ''$.SynapseSyncDataAzureKeyVaultSecretName''\n\t)\n)\nSELECT *\nFROM cte\n')",
+							"type": "Expression"
+						},
+						"queryTimeout": "24:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_Synapse_Managed_Identity",
+						"type": "DatasetReference",
+						"parameters": {
+							"ServerName": {
+								"value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+								"type": "Expression"
+							},
+							"DatabaseName": "master"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach - Create Delta Sync Tracking Tables",
+				"description": "Loop through each unique combination PoolName and SyncFolderPathFull from the Lookup - Distinct Pools ChangesFolderPathFull activity.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Lookup - Distinct Pools ChangesFolderPathFull",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lookup - Distinct Pools ChangesFolderPathFull').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Spark - Synapse Lakehouse Sync Create Tracking Table",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": "/Synapse Lakehouse Sync/Synapse Lakehouse Sync Create Tracking Table",
+								"baseParameters": {
+									"SynapseLakehouseSyncParameters": {
+										"value": "@item().JsonString",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_AzureDatabricks_Managed_Identity",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Lookup - Distinct Pools",
+				"description": "Get the distinct PoolName from the Lookup - Sync Pool activity. This is used to create the logging table in Synapse that is used to track row counts of the source delta tables and the tables in Synapse.",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Pool Schema Table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', activity('Lookup - Sync Pools').output.value, '''\n\nSELECT DISTINCT PoolName\nFROM OPENJSON(@sql)\nWITH\n(\n\tPoolName NVARCHAR(1000) ''$.PoolName''\n)\n')",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_Synapse_Managed_Identity",
+						"type": "DatasetReference",
+						"parameters": {
+							"ServerName": {
+								"value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+								"type": "Expression"
+							},
+							"DatabaseName": "master"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach - Create Synapse Logging Tables",
+				"description": "Loop through the items in from the Lookup - Distinct Pools activity. This will create the logging tables for each pool defined in the loading metadata.",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Lookup - Distinct Pools",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lookup - Distinct Pools').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Create Log Tables If Not Exists",
+							"description": "Create the two logging tables in the Synapse dedicated pool.",
+							"type": "Lookup",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlDWSource",
+									"sqlReaderQuery": "EXECUTE AS USER = 'Userstaticrc10';\n\nIF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE [name] = 'logging')\n    EXEC ('CREATE SCHEMA [logging]')\n;\n\nIF OBJECT_ID('logging.DataProfile', 'U') IS NULL\nCREATE TABLE logging.DataProfile\n(\n\tId INT IDENTITY(1,1) NOT NULL\n\t,PipelineRunId NVARCHAR(50) NOT NULL\n\t,PipelineStartDate INT NOT NULL\n\t,PipelineStartDateTime DATETIME2(0) NOT NULL\n    ,SchemaName NVARCHAR(100) NOT NULL\n    ,TableName NVARCHAR(100) NOT NULL\n\t,ColumnName NVARCHAR(100) NOT NULL\n\t,DataTypeName NVARCHAR(100) NOT NULL\n\t,DataTypeFull NVARCHAR(100) NOT NULL\n\t,CharacterLength INT NULL\n\t,PrecisionValue INT NULL\t\n\t,ScaleValue INT NULL\t\n\t,UniqueValueCount BIGINT NOT NULL\n\t,NullCount BIGINT NOT NULL\n\t,MinValue NVARCHAR(MAX)\n\t,MaxValue NVARCHAR(MAX)\n\t,MinLength INT\n\t,MaxLength INT\n\t,DataAverage NUMERIC(30,2)\n\t,DataStdevp FLOAT\n\t,TableRowCount BIGINT NOT NULL\n\t,TableDataSpaceGB NUMERIC(20,2) NOT NULL\n\t,WeightedScore NUMERIC(30,4)\n\t,SqlCommandDataProfile NVARCHAR(MAX) NOT NULL\n\t,SqlCommandCTAS NVARCHAR(MAX) NOT NULL\n    ,RowInsertDateTime DATETIME2(0) NOT NULL\n)\nWITH (DISTRIBUTION = ROUND_ROBIN, CLUSTERED INDEX(PipelineStartDateTime, PipelineRunId)\n)\n;\n\nIF OBJECT_ID('logging.SynapseLakehouseSync', 'U') IS NULL\nCREATE TABLE logging.SynapseLakehouseSync\n(\n\tId BIGINT IDENTITY(1,1) NOT NULL\n\t,PoolName NVARCHAR(100) NOT NULL\n    ,SchemaName NVARCHAR(100) NOT NULL\n    ,TableName NVARCHAR(100) NOT NULL\n\t,TableRowCountADLS BIGINT NULL\n\t,TableRowCountSynapse BIGINT NULL\n\t,DeltaDataADLSFullPath NVARCHAR(1000)\n\t,SynapseSyncDataADLSFullPath NVARCHAR(1000)\n    ,RowInsertDateTime DATETIME2(0) NOT NULL\n)\nWITH \n(\n\tDISTRIBUTION = ROUND_ROBIN, CLUSTERED INDEX(RowInsertDateTime)\n)\n;\nSELECT 1 AS a",
+									"queryTimeout": "24:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "DS_Synapse_Managed_Identity",
+									"type": "DatasetReference",
+									"parameters": {
+										"ServerName": {
+											"value": "@concat(pipeline().DataFactory, '.sql.azuresynapse.net')",
+											"type": "Expression"
+										},
+										"DatabaseName": {
+											"value": "@item().PoolName",
+											"type": "Expression"
+										}
+									}
+								},
+								"firstRowOnly": false
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Lookup - Distinct Pools ChangesFolderPathFull",
+				"description": "Get the distinct PoolName and SyncFolderPathFull combinations from the Lookup - Sync Pool activity. This is used to create the _SynapseLakehouseTracking delta table used to track each Synapse sync load.",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Pool Schema Table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', activity('Lookup - Sync Pools').output.value, '''\n\n;WITH cte AS\n(\n\tSELECT DISTINCT PoolName, SynapseWorkspaceName, SynapseSyncDataADLSFullPath, SynapseSyncDataDatabricksKeyVaultScope, SynapseSyncDataAzureKeyVaultSecretName\n\tFROM OPENJSON(@sql)\n\tWITH\n\t(\n\t\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t\t,SynapseWorkspaceName NVARCHAR(1000) ''$.SynapseWorkspaceName''\n\t\t,SynapseSyncDataADLSFullPath NVARCHAR(1000) ''$.SynapseSyncDataADLSFullPath''\n\t\t,SynapseSyncDataDatabricksKeyVaultScope NVARCHAR(1000) ''$.SynapseSyncDataDatabricksKeyVaultScope''\n\t\t,SynapseSyncDataAzureKeyVaultSecretName NVARCHAR(1000) ''$.SynapseSyncDataAzureKeyVaultSecretName''\n\t)\n)\nSELECT *\n\t\t,(SELECT * FROM cte AS b \n\t\tWHERE a.PoolName = b.PoolName \n\t\tAND a.SynapseWorkspaceName = b.SynapseWorkspaceName \n\t\tAND a.SynapseSyncDataADLSFullPath = b.SynapseSyncDataADLSFullPath \n\t\tAND a.SynapseSyncDataDatabricksKeyVaultScope = b.SynapseSyncDataDatabricksKeyVaultScope \n\t\tAND a.SynapseSyncDataAzureKeyVaultSecretName = b.SynapseSyncDataAzureKeyVaultSecretName \n\t\tFOR JSON AUTO, WITHOUT_ARRAY_WRAPPER) AS JsonString\nFROM cte AS a\n')",
+							"type": "Expression"
+						},
+						"queryTimeout": "24:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_Synapse_Managed_Identity",
+						"type": "DatasetReference",
+						"parameters": {
+							"ServerName": {
+								"value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+								"type": "Expression"
+							},
+							"DatabaseName": "master"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Lookup - Distinct Pools Schema",
+				"description": "Get the distinct PoolName and SchemaName combinations from the Lookup - Sync Pool activity. This is used to create the schemas in each pool for the data to be loaded.",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "ForEach - Pool Schema Table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlDWSource",
+						"sqlReaderQuery": {
+							"value": "@concat('DECLARE @sql NVARCHAR(MAX)\n\nSET @sql = ''', activity('Lookup - Sync Pools').output.value, '''\n\nSELECT DISTINCT PoolName, SchemaName\nFROM OPENJSON(@sql)\nWITH\n(\n\tPoolName NVARCHAR(1000) ''$.PoolName''\n\t,SchemaName NVARCHAR(1000) ''$.SchemaName''\n)\n')",
+							"type": "Expression"
+						},
+						"queryTimeout": "24:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_Synapse_Managed_Identity",
+						"type": "DatasetReference",
+						"parameters": {
+							"ServerName": {
+								"value": "@concat(pipeline().DataFactory, '-ondemand.sql.azuresynapse.net')",
+								"type": "Expression"
+							},
+							"DatabaseName": "master"
+						}
+					},
+					"firstRowOnly": false
+				}
+			}
+		],
+		"parameters": {
+			"StorageAccountNameMetadata": {
+				"type": "string",
+				"defaultValue": "https://synapsesyncqbq.dfs.core.windows.net/synapsesync/Databricks - Synapse_Lakehouse_Sync_Metadata.csv"
+			}
+		},
+		"variables": {
+			"DatabricksOutputArray": {
+				"type": "Array"
+			},
+			"PipelineValues": {
+				"type": "Array"
+			},
+			"MetadataArray": {
+				"type": "Array"
+			},
+			"DropTableFlag": {
+				"type": "Boolean",
+				"defaultValue": true
+			}
+		},
+		"folder": {
+			"name": "Databricks - Synapse Lakehouse Sync"
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-02-05T20:04:49Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

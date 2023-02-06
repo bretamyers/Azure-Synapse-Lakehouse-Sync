@@ -1,0 +1,432 @@
+{
+	"name": "Simulate Data Changes - AdventureWorks",
+	"properties": {
+		"folder": {
+			"name": "Synapse Lakehouse Sync Tutorial"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "SyncCluster",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 1,
+			"runAsWorkspaceSystemIdentity": true,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "true",
+				"spark.dynamicAllocation.minExecutors": "1",
+				"spark.dynamicAllocation.maxExecutors": "4",
+				"spark.autotune.trackingId": "a8a1e984-4e03-45c0-9ee1-232d6649e346"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1"
+			},
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/18bc4af3-8099-4e70-86d8-eba06dd5bac8/resourceGroups/Azure-Synapse-Lakehouse-Sync/providers/Microsoft.Synapse/workspaces/synapsesyncqbq/bigDataPools/SyncCluster",
+				"name": "SyncCluster",
+				"type": "Spark",
+				"endpoint": "https://synapsesyncqbq.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SyncCluster",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.3",
+				"nodeCount": 5,
+				"cores": 4,
+				"memory": 28,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "aa09db6c-b696-404e-aea4-4133ddd8d3b1",
+						"title": ""
+					}
+				},
+				"source": [
+					"### Simulate Data Changes - AdventureWorks\n",
+					"\n",
+					"This is the second Databricks notebook of two in the Azure Synapse Lakehouse Sync tutorial. It simulates inserts, updates, deletes, and schema changes across multiple AdventureWorks tables to demonstrate the Change Data Feed feature.\n",
+					"\n",
+					"**FactInternetSales**\n",
+					"  1. Merge records (updates and inserts)\n",
+					"  2. Delete Records\n",
+					"  \n",
+					"**FactResellerSales**\n",
+					"  1. Delete records\n",
+					"  2. Merge records (updates and inserts)\n",
+					"\n",
+					"**DimCustomer**\n",
+					"  1. Merge records (updates and inserts)\n",
+					"  \n",
+					"**DimProduct**\n",
+					"  1. No changes\n",
+					"  \n",
+					"**DimPromotion**\n",
+					"  1. Delete records\n",
+					"  2. Merge records (updates and inserts)\n",
+					"  3. Increase the data size of the EnglishPromotionName column to include a value with 40 characters\n",
+					"  \n",
+					"**DimDate**\n",
+					"  1. No changes"
+				]
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "f2459045-8269-43ff-a9c8-92c8a4991d38",
+						"title": ""
+					}
+				},
+				"source": [
+					"### Notebook Parameters\n",
+					"\n",
+					"The below parameters are populated at runtime by the **SynapseLakehouseSync_Tutorial** pipeline in the Synapse Analytics Workspace.\n",
+					"\n",
+					"<br>\n",
+					"\n",
+					"- **DeltaDataFolderPathFull**: The Azure Data Lake Storage path which contains our sample parquet tables and will contain the Delta 2.0 Gold Zone tables\n",
+					"- **DatabaseName**: The Delta 2.0 database name and the Synapse Dedicated SQL database to be synchronized to\n",
+					"- **SynapseWorkspaceName**: The ADLS storage account name where the AdventureWorks parquet data exists\n",
+					"- **ParquetDataADLSFullPath**: The ADLS storage account name where the AdventureWorks change dataset in parquet format exists.\n",
+					"- **ParquetDataDatabricksKeyVaultScope**: The Azure Databricks scope name\n",
+					"- **ParquetDataAzureKeyVaultSecretName**: The Azure Key Vault secret name"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"tags": [
+						"parameters"
+					]
+				},
+				"source": [
+					"SynapseLakehouseSyncParameters = '''\r\n",
+					"{\r\n",
+					"    \"DatabaseName\": \"AdventureWorks\",\r\n",
+					"    \"SynapseWorkspaceName\": \"synapsesyncqbq\",\r\n",
+					"    \"ParquetDataADLSFullPath\": \"abfss://gold@enterprisedatalakeqbq.dfs.core.windows.net/Sample/\"\r\n",
+					"}\r\n",
+					"'''"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "591d1d2d-237c-482d-b966-47e57a4ba6a5",
+						"title": "Parameters"
+					},
+					"tags": []
+				},
+				"source": [
+					"import json\n",
+					"\n",
+					"SynapseLakehouseSyncParameters = json.loads(SynapseLakehouseSyncParameters)\n",
+					"\n",
+					"print(json.dumps(SynapseLakehouseSyncParameters, indent=4))"
+				],
+				"execution_count": 33
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "e5a31fea-dd41-4d2c-8316-ac7c9a43106f",
+						"title": "Import Functions"
+					}
+				},
+				"source": [
+					"%run \"/Synapse Lakehouse Sync/Synapse Lakehouse Sync Functions\""
+				],
+				"execution_count": 34
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "62b3d1bc-e471-42d0-843b-e40607088403",
+						"title": "Delete - FactResellerSales"
+					}
+				},
+				"source": [
+					"deleteDF_FactResellerSales = spark.read.parquet(f'{SynapseLakehouseSyncParameters[\"ParquetDataADLSFullPath\"]}/{SynapseLakehouseSyncParameters[\"DatabaseName\"]}_changes/FactResellerSales_deletes')"
+				],
+				"execution_count": 35
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "58ebf017-c56c-46d5-aad5-f2edee0c48ce",
+						"title": "Perform a Delete before an insert"
+					}
+				},
+				"source": [
+					"from delta.tables import *\n",
+					"\n",
+					"tableName = 'FactResellerSales'\n",
+					"print(f'Merge - {tableName}')\n",
+					"deltaTable = DeltaTable.forName(spark, f'{SynapseLakehouseSyncParameters[\"DatabaseName\"]}.{tableName}')\n",
+					"\n",
+					"deltaTable.alias(\"target\").merge(\n",
+					"  deleteDF_FactResellerSales.alias(\"source\"), 'source.SalesOrderNumber = target.SalesOrderNumber AND source.SalesOrderLineNumber = target.SalesOrderLineNumber' ) \\\n",
+					"  .whenMatchedDelete() \\\n",
+					"  .execute()\n",
+					""
+				],
+				"execution_count": 36
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "b398b284-fd6b-4939-b7e4-8f9ccf87af4c",
+						"title": ""
+					}
+				},
+				"source": [
+					"mergeDF_FactInternetSales = spark.read.parquet(*[f'{SynapseLakehouseSyncParameters[\"ParquetDataADLSFullPath\"]}/{SynapseLakehouseSyncParameters[\"DatabaseName\"]}_changes/FactInternetSales_inserts', f'{SynapseLakehouseSyncParameters[\"ParquetDataADLSFullPath\"]}/{SynapseLakehouseSyncParameters[\"DatabaseName\"]}_changes/FactInternetSales_updates'])\n",
+					"mergeDF_FactResellerSales = spark.read.parquet(*[f'{SynapseLakehouseSyncParameters[\"ParquetDataADLSFullPath\"]}/{SynapseLakehouseSyncParameters[\"DatabaseName\"]}_changes/FactResellerSales_inserts', f'{SynapseLakehouseSyncParameters[\"ParquetDataADLSFullPath\"]}/{SynapseLakehouseSyncParameters[\"DatabaseName\"]}_changes/FactResellerSales_updates'])\n",
+					"mergeDF_DimCustomer = spark.read.parquet(*[f'{SynapseLakehouseSyncParameters[\"ParquetDataADLSFullPath\"]}/{SynapseLakehouseSyncParameters[\"DatabaseName\"]}_changes/DimCustomer_inserts', f'{SynapseLakehouseSyncParameters[\"ParquetDataADLSFullPath\"]}/{SynapseLakehouseSyncParameters[\"DatabaseName\"]}_changes/DimCustomer_updates'])\n",
+					"mergeDF_DimPromotion = spark.read.parquet(*[f'{SynapseLakehouseSyncParameters[\"ParquetDataADLSFullPath\"]}/{SynapseLakehouseSyncParameters[\"DatabaseName\"]}_changes/DimPromotion_inserts', f'{SynapseLakehouseSyncParameters[\"ParquetDataADLSFullPath\"]}/{SynapseLakehouseSyncParameters[\"DatabaseName\"]}_changes/DimPromotion_updates'])"
+				],
+				"execution_count": 37
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "44ea4c35-319e-4cf7-8391-90e850f155cd",
+						"title": "Perform Merge - inserts/updates"
+					}
+				},
+				"source": [
+					"from delta.tables import *\n",
+					"\n",
+					"tableName = 'FactInternetSales'\n",
+					"print(f'Merge - {tableName}')\n",
+					"deltaTable = DeltaTable.forName(spark, f'{SynapseLakehouseSyncParameters[\"DatabaseName\"]}.{tableName}')\n",
+					"\n",
+					"deltaTable.alias(\"target\").merge(\n",
+					"  mergeDF_FactInternetSales.alias(\"source\"), 'source.SalesOrderNumber = target.SalesOrderNumber AND source.SalesOrderLineNumber = target.SalesOrderLineNumber' ) \\\n",
+					"  .whenMatchedUpdate(set =\n",
+					"{'ProductKey': 'source.ProductKey', 'OrderDateKey': 'source.OrderDateKey', 'DueDateKey': 'source.DueDateKey', 'ShipDateKey': 'source.ShipDateKey', 'CustomerKey': 'source.CustomerKey', 'PromotionKey': 'source.PromotionKey', 'CurrencyKey': 'source.CurrencyKey', 'SalesTerritoryKey': 'source.SalesTerritoryKey', 'SalesOrderNumber': 'source.SalesOrderNumber', 'SalesOrderLineNumber': 'source.SalesOrderLineNumber', 'RevisionNumber': 'source.RevisionNumber', 'OrderQuantity': 'source.OrderQuantity', 'UnitPrice': 'source.UnitPrice', 'ExtendedAmount': 'source.ExtendedAmount', 'UnitPriceDiscountPct': 'source.UnitPriceDiscountPct', 'DiscountAmount': 'source.DiscountAmount', 'ProductStandardCost': 'source.ProductStandardCost', 'TotalProductCost': 'source.TotalProductCost', 'SalesAmount': 'source.SalesAmount', 'TaxAmt': 'source.TaxAmt', 'Freight': 'source.Freight', 'CarrierTrackingNumber': 'source.CarrierTrackingNumber', 'CustomerPONumber': 'source.CustomerPONumber', 'OrderDate': 'source.OrderDate', 'DueDate': 'source.DueDate', 'ShipDate': 'source.ShipDate'}) \\\n",
+					"  .whenNotMatchedInsert(values =\n",
+					"{'ProductKey': 'source.ProductKey', 'OrderDateKey': 'source.OrderDateKey', 'DueDateKey': 'source.DueDateKey', 'ShipDateKey': 'source.ShipDateKey', 'CustomerKey': 'source.CustomerKey', 'PromotionKey': 'source.PromotionKey', 'CurrencyKey': 'source.CurrencyKey', 'SalesTerritoryKey': 'source.SalesTerritoryKey', 'SalesOrderNumber': 'source.SalesOrderNumber', 'SalesOrderLineNumber': 'source.SalesOrderLineNumber', 'RevisionNumber': 'source.RevisionNumber', 'OrderQuantity': 'source.OrderQuantity', 'UnitPrice': 'source.UnitPrice', 'ExtendedAmount': 'source.ExtendedAmount', 'UnitPriceDiscountPct': 'source.UnitPriceDiscountPct', 'DiscountAmount': 'source.DiscountAmount', 'ProductStandardCost': 'source.ProductStandardCost', 'TotalProductCost': 'source.TotalProductCost', 'SalesAmount': 'source.SalesAmount', 'TaxAmt': 'source.TaxAmt', 'Freight': 'source.Freight', 'CarrierTrackingNumber': 'source.CarrierTrackingNumber', 'CustomerPONumber': 'source.CustomerPONumber', 'OrderDate': 'source.OrderDate', 'DueDate': 'source.DueDate', 'ShipDate': 'source.ShipDate'}) \\\n",
+					"  .execute()\n",
+					"\n",
+					"#############################################################################################\n",
+					"#############################################################################################\n",
+					"#############################################################################################\n",
+					"\n",
+					"tableName = 'FactResellerSales'\n",
+					"print(f'Merge - {tableName}')\n",
+					"deltaTable = DeltaTable.forName(spark, f'{SynapseLakehouseSyncParameters[\"DatabaseName\"]}.{tableName}')\n",
+					"\n",
+					"deltaTable.alias(\"target\").merge(\n",
+					"  mergeDF_FactResellerSales.alias(\"source\"), 'source.SalesOrderNumber = target.SalesOrderNumber AND source.SalesOrderLineNumber = target.SalesOrderLineNumber' ) \\\n",
+					"  .whenMatchedUpdate(set =\n",
+					"{'ProductKey': 'source.ProductKey', 'OrderDateKey': 'source.OrderDateKey', 'DueDateKey': 'source.DueDateKey', 'ShipDateKey': 'source.ShipDateKey', 'ResellerKey': 'source.ResellerKey', 'EmployeeKey': 'source.EmployeeKey', 'PromotionKey': 'source.PromotionKey', 'CurrencyKey': 'source.CurrencyKey', 'SalesTerritoryKey': 'source.SalesTerritoryKey', 'SalesOrderNumber': 'source.SalesOrderNumber', 'SalesOrderLineNumber': 'source.SalesOrderLineNumber', 'RevisionNumber': 'source.RevisionNumber', 'OrderQuantity': 'source.OrderQuantity', 'UnitPrice': 'source.UnitPrice', 'ExtendedAmount': 'source.ExtendedAmount', 'UnitPriceDiscountPct': 'source.UnitPriceDiscountPct', 'DiscountAmount': 'source.DiscountAmount', 'ProductStandardCost': 'source.ProductStandardCost', 'TotalProductCost': 'source.TotalProductCost', 'SalesAmount': 'source.SalesAmount', 'TaxAmt': 'source.TaxAmt', 'Freight': 'source.Freight', 'CarrierTrackingNumber': 'source.CarrierTrackingNumber', 'CustomerPONumber': 'source.CustomerPONumber', 'OrderDate': 'source.OrderDate', 'DueDate': 'source.DueDate', 'ShipDate': 'source.ShipDate'}) \\\n",
+					"  .whenNotMatchedInsert(values =\n",
+					"{'ProductKey': 'source.ProductKey', 'OrderDateKey': 'source.OrderDateKey', 'DueDateKey': 'source.DueDateKey', 'ShipDateKey': 'source.ShipDateKey', 'ResellerKey': 'source.ResellerKey', 'EmployeeKey': 'source.EmployeeKey', 'PromotionKey': 'source.PromotionKey', 'CurrencyKey': 'source.CurrencyKey', 'SalesTerritoryKey': 'source.SalesTerritoryKey', 'SalesOrderNumber': 'source.SalesOrderNumber', 'SalesOrderLineNumber': 'source.SalesOrderLineNumber', 'RevisionNumber': 'source.RevisionNumber', 'OrderQuantity': 'source.OrderQuantity', 'UnitPrice': 'source.UnitPrice', 'ExtendedAmount': 'source.ExtendedAmount', 'UnitPriceDiscountPct': 'source.UnitPriceDiscountPct', 'DiscountAmount': 'source.DiscountAmount', 'ProductStandardCost': 'source.ProductStandardCost', 'TotalProductCost': 'source.TotalProductCost', 'SalesAmount': 'source.SalesAmount', 'TaxAmt': 'source.TaxAmt', 'Freight': 'source.Freight', 'CarrierTrackingNumber': 'source.CarrierTrackingNumber', 'CustomerPONumber': 'source.CustomerPONumber', 'OrderDate': 'source.OrderDate', 'DueDate': 'source.DueDate', 'ShipDate': 'source.ShipDate'}) \\\n",
+					"  .execute()\n",
+					"\n",
+					"#############################################################################################\n",
+					"#############################################################################################\n",
+					"#############################################################################################\n",
+					"\n",
+					"tableName = 'DimCustomer'\n",
+					"print(f'Merge - {tableName}')\n",
+					"deltaTable = DeltaTable.forName(spark, f'{SynapseLakehouseSyncParameters[\"DatabaseName\"]}.{tableName}')\n",
+					"\n",
+					"deltaTable.alias(\"target\").merge(\n",
+					"  mergeDF_DimCustomer.alias(\"source\"), 'source.CustomerAlternateKey = target.CustomerAlternateKey' ) \\\n",
+					"  .whenMatchedUpdate(set =\n",
+					"{'CustomerKey': 'source.CustomerKey', 'GeographyKey': 'source.GeographyKey', 'CustomerAlternateKey': 'source.CustomerAlternateKey', 'Title': 'source.Title', 'FirstName': 'source.FirstName', 'MiddleName': 'source.MiddleName', 'LastName': 'source.LastName', 'NameStyle': 'source.NameStyle', 'BirthDate': 'source.BirthDate', 'MaritalStatus': 'source.MaritalStatus', 'Suffix': 'source.Suffix', 'Gender': 'source.Gender', 'EmailAddress': 'source.EmailAddress', 'YearlyIncome': 'source.YearlyIncome', 'TotalChildren': 'source.TotalChildren', 'NumberChildrenAtHome': 'source.NumberChildrenAtHome', 'EnglishEducation': 'source.EnglishEducation', 'SpanishEducation': 'source.SpanishEducation', 'FrenchEducation': 'source.FrenchEducation', 'EnglishOccupation': 'source.EnglishOccupation', 'SpanishOccupation': 'source.SpanishOccupation', 'FrenchOccupation': 'source.FrenchOccupation', 'HouseOwnerFlag': 'source.HouseOwnerFlag', 'NumberCarsOwned': 'source.NumberCarsOwned', 'AddressLine1': 'source.AddressLine1', 'AddressLine2': 'source.AddressLine2', 'Phone': 'source.Phone', 'DateFirstPurchase': 'source.DateFirstPurchase', 'CommuteDistance': 'source.CommuteDistance'}) \\\n",
+					"  .whenNotMatchedInsert(values =\n",
+					"{'CustomerKey': 'source.CustomerKey', 'GeographyKey': 'source.GeographyKey', 'CustomerAlternateKey': 'source.CustomerAlternateKey', 'Title': 'source.Title', 'FirstName': 'source.FirstName', 'MiddleName': 'source.MiddleName', 'LastName': 'source.LastName', 'NameStyle': 'source.NameStyle', 'BirthDate': 'source.BirthDate', 'MaritalStatus': 'source.MaritalStatus', 'Suffix': 'source.Suffix', 'Gender': 'source.Gender', 'EmailAddress': 'source.EmailAddress', 'YearlyIncome': 'source.YearlyIncome', 'TotalChildren': 'source.TotalChildren', 'NumberChildrenAtHome': 'source.NumberChildrenAtHome', 'EnglishEducation': 'source.EnglishEducation', 'SpanishEducation': 'source.SpanishEducation', 'FrenchEducation': 'source.FrenchEducation', 'EnglishOccupation': 'source.EnglishOccupation', 'SpanishOccupation': 'source.SpanishOccupation', 'FrenchOccupation': 'source.FrenchOccupation', 'HouseOwnerFlag': 'source.HouseOwnerFlag', 'NumberCarsOwned': 'source.NumberCarsOwned', 'AddressLine1': 'source.AddressLine1', 'AddressLine2': 'source.AddressLine2', 'Phone': 'source.Phone', 'DateFirstPurchase': 'source.DateFirstPurchase', 'CommuteDistance': 'source.CommuteDistance'}) \\\n",
+					"  .execute()\n",
+					"\n",
+					"#############################################################################################\n",
+					"#############################################################################################\n",
+					"#############################################################################################\n",
+					"\n",
+					"tableName = 'DimPromotion'\n",
+					"print(f'Merge - {tableName}')\n",
+					"deltaTable = DeltaTable.forName(spark, f'{SynapseLakehouseSyncParameters[\"DatabaseName\"]}.{tableName}')\n",
+					"\n",
+					"deltaTable.alias(\"target\").merge(\n",
+					"  mergeDF_DimPromotion.alias(\"source\"), 'source.PromotionAlternateKey = target.PromotionAlternateKey' ) \\\n",
+					"  .whenMatchedUpdate(set =\n",
+					"{'PromotionKey': 'source.PromotionKey', 'PromotionAlternateKey': 'source.PromotionAlternateKey', 'EnglishPromotionName': 'source.EnglishPromotionName', 'SpanishPromotionName': 'source.SpanishPromotionName', 'FrenchPromotionName': 'source.FrenchPromotionName', 'DiscountPct': 'source.DiscountPct', 'EnglishPromotionType': 'source.EnglishPromotionType', 'SpanishPromotionType': 'source.SpanishPromotionType', 'FrenchPromotionType': 'source.FrenchPromotionType', 'EnglishPromotionCategory': 'source.EnglishPromotionCategory', 'SpanishPromotionCategory': 'source.SpanishPromotionCategory', 'FrenchPromotionCategory': 'source.FrenchPromotionCategory', 'StartDate': 'source.StartDate', 'EndDate': 'source.EndDate', 'MinQty': 'source.MinQty', 'MaxQty': 'source.MaxQty'}) \\\n",
+					"  .whenNotMatchedInsert(values =\n",
+					"{'PromotionKey': 'source.PromotionKey', 'PromotionAlternateKey': 'source.PromotionAlternateKey', 'EnglishPromotionName': 'source.EnglishPromotionName', 'SpanishPromotionName': 'source.SpanishPromotionName', 'FrenchPromotionName': 'source.FrenchPromotionName', 'DiscountPct': 'source.DiscountPct', 'EnglishPromotionType': 'source.EnglishPromotionType', 'SpanishPromotionType': 'source.SpanishPromotionType', 'FrenchPromotionType': 'source.FrenchPromotionType', 'EnglishPromotionCategory': 'source.EnglishPromotionCategory', 'SpanishPromotionCategory': 'source.SpanishPromotionCategory', 'FrenchPromotionCategory': 'source.FrenchPromotionCategory', 'StartDate': 'source.StartDate', 'EndDate': 'source.EndDate', 'MinQty': 'source.MinQty', 'MaxQty': 'source.MaxQty'}) \\\n",
+					"  .execute()"
+				],
+				"execution_count": 38
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "207b501c-f67b-48de-9c1f-e630c16dcd50",
+						"title": "Delete - FactInternetSales"
+					}
+				},
+				"source": [
+					"deleteDF_FactInternetSales = spark.read.parquet(f'{SynapseLakehouseSyncParameters[\"ParquetDataADLSFullPath\"]}/{SynapseLakehouseSyncParameters[\"DatabaseName\"]}_changes/FactInternetSales_deletes')"
+				],
+				"execution_count": 39
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "37a6d7f4-3bce-4bac-9c50-f082e4d7c941",
+						"title": "Perform Delete after an insert"
+					}
+				},
+				"source": [
+					"from delta.tables import *\n",
+					"\n",
+					"tableName = 'FactInternetSales'\n",
+					"print(f'Merge - {tableName}')\n",
+					"deltaTable = DeltaTable.forName(spark, f'{SynapseLakehouseSyncParameters[\"DatabaseName\"]}.{tableName}')\n",
+					"\n",
+					"deltaTable.alias(\"target\").merge(\n",
+					"  deleteDF_FactInternetSales.alias(\"source\"), 'source.SalesOrderNumber = target.SalesOrderNumber AND source.SalesOrderLineNumber = target.SalesOrderLineNumber' ) \\\n",
+					"  .whenMatchedDelete() \\\n",
+					"  .execute()\n",
+					""
+				],
+				"execution_count": 40
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "1a86664a-d220-4aac-b0e8-5e500a440fe3",
+						"title": "Change Datatypes (EnglishPromotionName -> 40 characters)"
+					}
+				},
+				"source": [
+					"from pyspark.sql.types import StructType, StructField, StringType, TimestampType, LongType, ArrayType, IntegerType, BooleanType, LongType, DoubleType\n",
+					"import datetime\n",
+					"from delta.tables import *\n",
+					"\n",
+					"mySchema = StructType([StructField('_Id',LongType(),True),StructField('PromotionKey',IntegerType(),True),StructField('PromotionAlternateKey',IntegerType(),True),StructField('EnglishPromotionName',StringType(),True),StructField('SpanishPromotionName',StringType(),True),StructField('FrenchPromotionName',StringType(),True),StructField('DiscountPct',DoubleType(),True),StructField('EnglishPromotionType',StringType(),True),StructField('SpanishPromotionType',StringType(),True),StructField('FrenchPromotionType',StringType(),True),StructField('EnglishPromotionCategory',StringType(),True),StructField('SpanishPromotionCategory',StringType(),True),StructField('FrenchPromotionCategory',StringType(),True),StructField('StartDate',TimestampType(),True),StructField('EndDate',TimestampType(),True),StructField('MinQty',IntegerType(),True),StructField('MaxQty',IntegerType(),True)])\n",
+					"\n",
+					"data = [(1, 1, 1, '_' * 40, 'Sin descuento', 'Aucune remise', float(0), 'No Discount', 'Sin descuento', 'Aucune remise', 'No Discount', 'Sin descuento', 'Aucune remise', datetime.datetime.strptime('2010-11-29', '%Y-%m-%d'), datetime.datetime.strptime('2014-06-30', '%Y-%m-%d'), 0, None )]\n",
+					"\n",
+					"mergeDF_DimPromotion_DatatypeChange = spark.createDataFrame(data=data, schema=mySchema)\n",
+					"\n",
+					"\n",
+					"tableName = 'DimPromotion'\n",
+					"print(f'Merge - {tableName}')\n",
+					"deltaTable = DeltaTable.forName(spark, f'{SynapseLakehouseSyncParameters[\"DatabaseName\"]}.{tableName}')\n",
+					"\n",
+					"deltaTable.alias(\"target\").merge(\n",
+					"  mergeDF_DimPromotion_DatatypeChange.alias(\"source\"), 'source.PromotionAlternateKey = target.PromotionAlternateKey' ) \\\n",
+					"  .whenMatchedUpdate(set =\n",
+					"{'PromotionKey': 'source.PromotionKey', 'PromotionAlternateKey': 'source.PromotionAlternateKey', 'EnglishPromotionName': 'source.EnglishPromotionName', 'SpanishPromotionName': 'source.SpanishPromotionName', 'FrenchPromotionName': 'source.FrenchPromotionName', 'DiscountPct': 'source.DiscountPct', 'EnglishPromotionType': 'source.EnglishPromotionType', 'SpanishPromotionType': 'source.SpanishPromotionType', 'FrenchPromotionType': 'source.FrenchPromotionType', 'EnglishPromotionCategory': 'source.EnglishPromotionCategory', 'SpanishPromotionCategory': 'source.SpanishPromotionCategory', 'FrenchPromotionCategory': 'source.FrenchPromotionCategory', 'StartDate': 'source.StartDate', 'EndDate': 'source.EndDate', 'MinQty': 'source.MinQty', 'MaxQty': 'source.MaxQty'}) \\\n",
+					"  .whenNotMatchedInsert(values =\n",
+					"{'PromotionKey': 'source.PromotionKey', 'PromotionAlternateKey': 'source.PromotionAlternateKey', 'EnglishPromotionName': 'source.EnglishPromotionName', 'SpanishPromotionName': 'source.SpanishPromotionName', 'FrenchPromotionName': 'source.FrenchPromotionName', 'DiscountPct': 'source.DiscountPct', 'EnglishPromotionType': 'source.EnglishPromotionType', 'SpanishPromotionType': 'source.SpanishPromotionType', 'FrenchPromotionType': 'source.FrenchPromotionType', 'EnglishPromotionCategory': 'source.EnglishPromotionCategory', 'SpanishPromotionCategory': 'source.SpanishPromotionCategory', 'FrenchPromotionCategory': 'source.FrenchPromotionCategory', 'StartDate': 'source.StartDate', 'EndDate': 'source.EndDate', 'MinQty': 'source.MinQty', 'MaxQty': 'source.MaxQty'}) \\\n",
+					"  .execute()\n",
+					""
+				],
+				"execution_count": 41
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "95acc103-01c0-42ec-98ba-321a3ea59669",
+						"title": "Drop a column - Does not work!! Need to do multiple steps. Not worth the hassle"
+					}
+				},
+				"source": [
+					"from pyspark.sql.types import StructType, StructField, StringType, TimestampType, LongType, ArrayType, IntegerType, BooleanType, LongType, DoubleType\n",
+					"import datetime\n",
+					"import pyspark\n",
+					"\n",
+					"\n",
+					"# dfDropColumn = DeltaTable.forPath(spark, f'abfss://bronzezone@adlsbrmyers.dfs.core.windows.net/AdventureWorks/DimCustomer').toDF()\n",
+					"# dfDropColumn.printSchema()\n",
+					"\n",
+					"#https://stackoverflow.com/questions/54457068/how-to-drop-a-column-from-a-databricks-delta-table\n",
+					"# spark.sql(f'ALTER TABLE AdventureWorks.DimCustomer DROP COLUMN EmailAddress')\n",
+					""
+				],
+				"execution_count": 42
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "106f3ef8-870f-4ba2-81d8-e90960c01b9a",
+						"title": "Add a column - Does not work!! Need to do multiple steps. Not worth the hassle"
+					}
+				},
+				"source": [
+					"from pyspark.sql.types import StructType, StructField, StringType, TimestampType, LongType, ArrayType, IntegerType, BooleanType, LongType, DoubleType\n",
+					"import datetime\n",
+					"\n",
+					"# dfAddColumn = DeltaTable.forPath(spark, f'abfss://bronzezone@adlsbrmyers.dfs.core.windows.net/AdventureWorks/DimProduct').toDF()\n",
+					"# dfAddColumn.printSchema()\n",
+					"\n",
+					"#https://stackoverflow.com/questions/54457068/how-to-drop-a-column-from-a-databricks-delta-table\n",
+					"# spark.sql(f'ALTER TABLE AdventureWorks.DimProduct DROP COLUMN Size')\n",
+					"\n",
+					"\n",
+					""
+				],
+				"execution_count": 43
+			}
+		]
+	}
+}

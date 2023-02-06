@@ -1,0 +1,359 @@
+{
+	"name": "Synapse Lakehouse Sync Functions",
+	"properties": {
+		"folder": {
+			"name": "Synapse Lakehouse Sync"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "SyncCluster",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 1,
+			"runAsWorkspaceSystemIdentity": true,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "true",
+				"spark.dynamicAllocation.minExecutors": "1",
+				"spark.dynamicAllocation.maxExecutors": "4",
+				"spark.autotune.trackingId": "c4915e36-d926-49f8-baf4-3b291385958f"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1"
+			},
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "python"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/18bc4af3-8099-4e70-86d8-eba06dd5bac8/resourceGroups/Azure-Synapse-Lakehouse-Sync/providers/Microsoft.Synapse/workspaces/synapsesyncqbq/bigDataPools/SyncCluster",
+				"name": "SyncCluster",
+				"type": "Spark",
+				"endpoint": "https://synapsesyncqbq.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SyncCluster",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.3",
+				"nodeCount": 5,
+				"cores": 4,
+				"memory": 28,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "8636193f-8523-41f3-adec-3d167377741c",
+						"title": ""
+					}
+				},
+				"source": [
+					"### Syanpse Lakehouse Sync Functions\n",
+					"\n",
+					"* UnifyFolderPaths - Creates a dictionary for the abfss and https paths given either abfss or https as the path given.\n",
+					"* Tracker - Creates a _SynapseLakehouseTracker delta table for the given pool if it does not exist."
+				]
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "831683a3-4656-477d-a2ac-149e70260247",
+						"title": ""
+					}
+				},
+				"source": [
+					"#### UnifyFolderPaths Function\n",
+					"**Creates a dictionary for the abfss and https paths given either abfss or https as the path given.**"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "6d1a7aad-9335-491e-ad3d-1ebd60be64e3",
+						"title": ""
+					}
+				},
+				"source": [
+					"import re\n",
+					"\n",
+					"\"\"\"\n",
+					"Creates a dictionary for the abfss and https paths given either abfss or https as the path given.\n",
+					"\n",
+					"Parameters:\n",
+					"    - Key: Prefix for the JSON item. \n",
+					"    - FolderPathFull: Either abfss or https ADLS folder paths\n",
+					"\n",
+					"Output:\n",
+					"    - Dictionary of the abfss and https paths\n",
+					"\n",
+					"Example:\n",
+					"    Input - UnifyFolderPaths('TestLocation', 'abfss://mycontainer@mystorageaccount.dfs.core.net.windows')\n",
+					"    Output - {\n",
+					"                'TestLocation_abfss', 'abfss://mycontainer@mystorageaccount.dfs.core.net.windows/myFolder'\n",
+					"                ,'TestLocation_https', 'https://mystorageaccount.dfs.core.net.windows/mycontainer/myFolder'\n",
+					"            }\n",
+					"\"\"\"\n",
+					"def UnifyFolderPaths(key, FolderPathFull) -> dict:\n",
+					"  folderPathDict = dict()\n",
+					"  \n",
+					"  if FolderPathFull.startswith('abfss://'):\n",
+					"    ## abfss => https:\n",
+					"    # FolderPathFull = 'abfss://goldzone@adlsbrmyers.dfs.core.windows.net/AdventureWorksDW2019_base_delta/dbo/FactInternetSales/'\n",
+					"    patternFileSystem = '(?<=abfss:\\/\\/).+(?=\\@)'\n",
+					"    patternStorageAccount = '@([^\\/]*)'\n",
+					"    patternRemaining = '((?:[^\\/]*\\/){3})(.+)'\n",
+					"\n",
+					"    fileSystemName = re.findall(patternFileSystem, FolderPathFull)[0]\n",
+					"    storageAccountName = re.findall(patternStorageAccount, FolderPathFull)[0]\n",
+					"    \n",
+					"    if len(re.findall(patternRemaining, FolderPathFull)) > 0:\n",
+					"      remaining = re.findall(patternRemaining, FolderPathFull)[0][1]\n",
+					"    else:\n",
+					"      remaining = ''\n",
+					"    FolderPathFullHttps = f'https://{storageAccountName}/{fileSystemName}/{remaining}'\n",
+					"\n",
+					"    # print(FolderPathFullHttps)\n",
+					"    folderPathDict = {f'{key}_abfss':FolderPathFull.rstrip(\"/\"), f'{key}_https':FolderPathFullHttps.rstrip(\"/\")}\n",
+					"\n",
+					"  elif FolderPathFull.startswith('https://'):\n",
+					"    ## https => abfss:\n",
+					"    # FolderPathFull = 'https://adlsbrmyers.dfs.core.windows.net/goldzone/AdventureWorksDW2019_base_delta/dbo/FactInternetSales/'\n",
+					"    patternFileSystem = '((?:.*?\\/){3})(.+)((?:.*?\\/){4})'\n",
+					"    patternStorageAccount = '(?<=https:\\/\\/).+(?=\\.dfs)'\n",
+					"    patternRemaining = '((?:[^\\/]*\\/){4})(.+)'\n",
+					"\n",
+					"    fileSystemName = re.findall(patternFileSystem, FolderPathFull)[0][1]\n",
+					"    storageAccountName = re.findall(patternStorageAccount, FolderPathFull)[0]\n",
+					"    \n",
+					"    if len(re.findall(patternRemaining, FolderPathFull)) > 0:\n",
+					"      remaining = re.findall(patternRemaining, FolderPathFull)[0][1]\n",
+					"    else:\n",
+					"      remaining = ''\n",
+					"      \n",
+					"    FolderPathFullAbfss = f'abfss://{fileSystemName}@{storageAccountName}.dfs.core.windows.net/{remaining}'\n",
+					"\n",
+					"    # print(FolderPathFullAbfss)\n",
+					"    folderPathDict = {f'{key}_abfss':FolderPathFullAbfss.rstrip(\"/\"), f'{key}_https':FolderPathFull.rstrip(\"/\")}\n",
+					"    \n",
+					"  return folderPathDict\n",
+					"\n",
+					""
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "6878cf0a-67cb-4e5c-97cc-255e4b2a4f2c",
+						"title": ""
+					}
+				},
+				"source": [
+					"import re\n",
+					"\n",
+					"def GetAzureStorageAccountName(FolderPathFull) -> dict:\n",
+					"  folderPathDict = dict()\n",
+					"  \n",
+					"  if FolderPathFull.startswith('abfss://'):\n",
+					"    ## abfss => https:\n",
+					"    # FolderPathFull = 'abfss://goldzone@adlsbrmyers.dfs.core.windows.net/AdventureWorksDW2019_base_delta/dbo/FactInternetSales/'\n",
+					"    patternStorageAccount = '@([^\\/]*)(?=\\.dfs)'\n",
+					"\n",
+					"    storageAccountName = re.findall(patternStorageAccount, FolderPathFull)[0]\n",
+					"\n",
+					"  elif FolderPathFull.startswith('https://'):\n",
+					"    ## https => abfss:\n",
+					"    # FolderPathFull = 'https://adlsbrmyers.dfs.core.windows.net/goldzone/AdventureWorksDW2019_base_delta/dbo/FactInternetSales/'\n",
+					"    patternStorageAccount = '(?<=https:\\/\\/).+(?=\\.dfs)'\n",
+					"    \n",
+					"  return storageAccountName"
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "d7300726-0a56-4d52-93e9-1badf2bc4ade",
+						"title": ""
+					}
+				},
+				"source": [
+					"#### Tracker Class\n",
+					"**Creates a _SynapseLakehouseTracker delta table for the given pool if it does not exist.**"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "efc38c2a-574d-4f11-be0d-91ddaea44a96",
+						"title": ""
+					}
+				},
+				"source": [
+					"import datetime\n",
+					"import hashlib\n",
+					"from pyspark.sql.types import StructType, StructField, StringType, TimestampType, LongType, ArrayType, IntegerType, BooleanType\n",
+					"from delta import *\n",
+					"\n",
+					"\"\"\"\n",
+					"Creates a _SynapseLakehouseTracker delta table for the given pool if it does not exist.\n",
+					"\n",
+					"def __int__:\n",
+					"    Parameters:\n",
+					"        - PoolName: The dedicated sql pool name.\n",
+					"        - TrackerFolderPath: The folder path where the delta table will be created.\n",
+					"\n",
+					"  Output:\n",
+					"\n",
+					"def AddEntry:\n",
+					"    Parameters:\n",
+					"      - PoolName: The dedicated sql pool name.\n",
+					"      - TrackerFolderPath: The folder path where the delta table will be created.\n",
+					"\n",
+					"  Output:\n",
+					"  \n",
+					"def CloseEntry:\n",
+					"    Parameters:\n",
+					"      - PoolName: The dedicated sql pool name.\n",
+					"      - TrackerFolderPath: The folder path where the delta table will be created.\n",
+					"\n",
+					"  Output:\n",
+					"  \n",
+					"def GetLastSuccessfulSynapseLoad:\n",
+					"    Parameters:\n",
+					"        - PoolName: The dedicated sql pool name.\n",
+					"        - TrackerFolderPath: The folder path where the delta table will be created.\n",
+					"\n",
+					"  Output:\n",
+					"  \n",
+					"\"\"\"\n",
+					"class Tracker():\n",
+					"    def __init__(self, SynapseWorkspaceName:str, PoolName:str, TrackerFolderPath:str):\n",
+					"        self.syncSchema = StructType([       \n",
+					"          StructField('SynapseLakehouseSyncKey', StringType(), False),\n",
+					"          StructField('PoolName', StringType(), False),\n",
+					"          StructField('SchemaName', StringType(), False),\n",
+					"          StructField('TableName', StringType(), False),\n",
+					"          StructField('VersionNumberStart', LongType(), False),\n",
+					"          StructField('VersionNumberEnd', LongType(), False),\n",
+					"          StructField('DateTimeStart', TimestampType(), False),\n",
+					"          StructField('DateTimeEnd', TimestampType(), False),\n",
+					"          StructField('InsertDateTime', TimestampType(), False),\n",
+					"          StructField('LoadType', StringType(), False),\n",
+					"          StructField('ChangeTypes', ArrayType(StringType()), False),\n",
+					"          StructField('TableRowCountADLS', LongType(), True),\n",
+					"          StructField('TableRowCountSynapse', LongType(), True),\n",
+					"          StructField('ADLSStagedFlag', BooleanType(), False),\n",
+					"          StructField('SynapseLoadedFlag', BooleanType(), False),\n",
+					"          StructField('SynapseLoadedDateTime', TimestampType(), True)\n",
+					"      ])\n",
+					"        self.trackerFolderPath = UnifyFolderPaths(key='TrackerFolderPath', FolderPathFull=TrackerFolderPath)\n",
+					"        self.SynapseWorkspaceName = SynapseWorkspaceName\n",
+					"        self.poolName = PoolName\n",
+					"        DeltaTable.createIfNotExists(spark).location(f'{self.trackerFolderPath[\"TrackerFolderPath_abfss\"]}/{SynapseWorkspaceName}_{PoolName}_SynapseLakehouseSync/_SynapseLakehouseSyncTracker').addColumns(self.syncSchema).execute()\n",
+					"\n",
+					"    def AddEntry(self, SchemaName:str, TableName:str, VersionStart:int, VersionEnd:int, DateTimeStart:str, DateTimeEnd:str, LoadType:str, ChangeTypes:str, TableRowCountADLS:int):\n",
+					"      \n",
+					"        InsertDateTime = datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S')\n",
+					"        SynapseLakehouseSyncKey = hashlib.md5('||'.join([self.poolName, SchemaName, TableName, InsertDateTime.strftime('%Y-%m-%d %H:%M:%S')]).encode()).hexdigest()\n",
+					"        \n",
+					"        df = spark.createDataFrame(data=[(SynapseLakehouseSyncKey, self.poolName, SchemaName, TableName, VersionStart, VersionEnd, DateTimeStart, DateTimeEnd, InsertDateTime, LoadType, ChangeTypes, TableRowCountADLS, None, True, False, None) ], schema=self.syncSchema)\n",
+					"\n",
+					"        df.write.format('delta').mode('append').save(f'{self.trackerFolderPath[\"TrackerFolderPath_abfss\"]}/{self.SynapseWorkspaceName}_{self.poolName}_SynapseLakehouseSync/_SynapseLakehouseSyncTracker')\n",
+					"\n",
+					"        return SynapseLakehouseSyncKey\n",
+					"    \n",
+					"    def CloseEntry(self, SynapseLakehouseSyncKey:str, TableRowCountSynapse:int):\n",
+					"        \n",
+					"        spark.sql(f\"\"\"UPDATE delta.`{self.trackerFolderPath[\"TrackerFolderPath_abfss\"]}/{self.SynapseWorkspaceName}_{self.poolName}_SynapseLakehouseSync/_SynapseLakehouseSyncTracker`\n",
+					"            SET SynapseLoadedFlag = True\n",
+					"                ,SynapseLoadedDateTime = '{datetime.datetime.now()}'\n",
+					"                ,TableRowCountSynapse = {TableRowCountSynapse}\n",
+					"            WHERE PoolName = '{self.poolName}'\n",
+					"            AND SynapseLakehouseSyncKey = '{SynapseLakehouseSyncKey}'\n",
+					"        \"\"\")\n",
+					"\n",
+					"    def GetLastSuccessfulSynapseLoad(self, SchemaName:str, TableName:str):\n",
+					"        \n",
+					"        spark.read.format('delta').load(f'{self.trackerFolderPath[\"TrackerFolderPath_abfss\"]}/{self.SynapseWorkspaceName}_{self.poolName}_SynapseLakehouseSync/_SynapseLakehouseSyncTracker').createOrReplaceTempView('vwTracker')\n",
+					"\n",
+					"        dfTracker = spark.sql(f\"\"\"\n",
+					"        SELECT PoolName, SchemaName, TableName, VersionNumberEnd, DateTimeEnd\n",
+					"        FROM\n",
+					"        (\n",
+					"          SELECT PoolName, SchemaName, TableName, VersionNumberEnd, DateTimeEnd, ROW_NUMBER() OVER (PARTITION BY PoolName, SchemaName, TableName ORDER BY InsertDateTime DESC) AS _RN\n",
+					"          FROM vwTracker\n",
+					"          WHERE SynapseLoadedFlag = True\n",
+					"          AND TableRowCountADLS == TableRowCountSynapse\n",
+					"          AND PoolName = '{self.poolName}'\n",
+					"          AND SchemaName = '{SchemaName}'\n",
+					"          AND TableName = '{TableName}'\n",
+					"        )\n",
+					"        WHERE _RN = 1\n",
+					"        \"\"\")\n",
+					"        \n",
+					"        return dfTracker\n",
+					"\n",
+					"\n",
+					"# if __name__ == '__main__':\n",
+					"#     track = Tracker(PoolName='TestPool', TrackerFolderPath='abfss://bronzezone@adlsbrmyers.dfs.core.windows.net/')\n",
+					"\n",
+					"#     key = track.AddEntry(SchemaName='TestDB', TableName='TestTable', VersionStart=0, VersionEnd=0, DateTimeStart=datetime.datetime.strptime('2022-08-20 21:25:24', '%Y-%m-%d %H:%M:%S'), DateTimeEnd=datetime.datetime.strptime('2022-08-20 21:25:24', '%Y-%m-%d %H:%M:%S'), LoadType='', ChangeTypes=[''])\n",
+					"#     print(key)\n",
+					"\n",
+					"#     track.CloseEntry('e22957d685f716b6e0b5e26c4e8be860')\n",
+					"\n",
+					"#     display(track.GetLastSuccessfulSynapseLoad('TestDB', 'TestTable'))\n",
+					"\n",
+					"    # SchemaName='TestDB', TableName='TestTable', VersionNumberStart=0, VersionNumberEnd=0, DateTimeStart=datetime.datetime.strptime('2022-08-20 21:25:24', '%Y-%m-%d %H:%M:%S'), DateTimeEnd=datetime.datetime.strptime('2022-08-20 21:25:24', '%Y-%m-%d %H:%M:%S'), LoadType='', ChangeTypes=[''], StagedFlag=True, LoadedFlag=False)\n",
+					"\n",
+					"    # keyValue = Tracker(PoolName='TestPool', SchemaName='TestDB', TableName='TestTable', VersionNumberStart=0, VersionNumberEnd=0, DateTimeStart=datetime.datetime.strptime('2022-08-20 21:25:24', '%Y-%m-%d %H:%M:%S'), DateTimeEnd=datetime.datetime.strptime('2022-08-20 21:25:24', '%Y-%m-%d %H:%M:%S'), LoadType='', ChangeTypes=[''], StagedFlag=True, LoadedFlag=False)\n",
+					""
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "5d9d6b81-1196-45a1-bb64-b1862d0e9c5e",
+						"title": ""
+					}
+				},
+				"source": [
+					""
+				],
+				"execution_count": 0
+			}
+		]
+	}
+}

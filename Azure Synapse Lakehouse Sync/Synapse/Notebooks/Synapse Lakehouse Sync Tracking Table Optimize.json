@@ -1,0 +1,209 @@
+{
+	"name": "Synapse Lakehouse Sync Tracking Table Optimize",
+	"properties": {
+		"folder": {
+			"name": "Synapse Lakehouse Sync"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "SyncCluster",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 1,
+			"runAsWorkspaceSystemIdentity": true,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "true",
+				"spark.dynamicAllocation.minExecutors": "1",
+				"spark.dynamicAllocation.maxExecutors": "4",
+				"spark.autotune.trackingId": "f4ccba6c-d9e0-4094-a495-9a197c56a6e6"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"synapse_widget": {
+				"version": "0.1"
+			},
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/18bc4af3-8099-4e70-86d8-eba06dd5bac8/resourceGroups/Azure-Synapse-Lakehouse-Sync/providers/Microsoft.Synapse/workspaces/synapsesyncqbq/bigDataPools/SyncCluster",
+				"name": "SyncCluster",
+				"type": "Spark",
+				"endpoint": "https://synapsesyncqbq.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SyncCluster",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net",
+					"authHeader": null
+				},
+				"sparkVersion": "3.3",
+				"nodeCount": 5,
+				"cores": 4,
+				"memory": 28,
+				"extraHeader": null
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "5fb0d76b-7751-47fb-bcab-65bf5c9f0b37",
+						"title": ""
+					}
+				},
+				"source": [
+					"### Synapse Lakehouse Sync Tracking Table Optimize\n",
+					"\n",
+					"#### Optmize and vacuum the _SynapseLakehouseSync table\n",
+					"This notebook will optimize and vaccum the tracker table to remove and compact the files for optimial reading performance on the next iteration.\n",
+					"\n",
+					"#### Notebook Parameters\n",
+					"- **PoolName** - The Synapse Dedicated Pool name that the data will be loaded into\n",
+					"- **SynapseWorkspaceName** - The Synapse workspace name\n",
+					"- **SyncFolderPathFull** - The full path in either abfss or https format that the CDC changes will be loaded to as well as where the _SynapseLakehouseSync delta table is stored"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"tags": [
+						"parameters"
+					]
+				},
+				"source": [
+					"SynapseLakehouseSyncParameters = '''\r\n",
+					"{\r\n",
+					"\t\"PoolName\": \"DataWarehouse\",\r\n",
+					"\t\"SynapseWorkspaceName\": \"synapsesyncqbq\",\r\n",
+					"\t\"DeltaDataADLSFullPath\": \"abfss://gold@enterprisedatalakeqbq.dfs.core.windows.net/Sample/AdventureWorks/DimCustomer/\",\r\n",
+					"\t\"SynapseSyncDataADLSFullPath\": \"abfss://gold@enterprisedatalakeqbq.dfs.core.windows.net/Sample/\"\r\n",
+					"}\r\n",
+					"'''"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "853155c9-c5dd-47b9-9990-b372568a1ba5",
+						"title": "Parameters"
+					},
+					"tags": []
+				},
+				"source": [
+					"import json\n",
+					"\n",
+					"SynapseLakehouseSyncParameters = json.loads(SynapseLakehouseSyncParameters)\n",
+					"\n",
+					"print(json.dumps(SynapseLakehouseSyncParameters, indent=4))"
+				],
+				"execution_count": 2
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "253fc4bb-8f3f-4b37-8053-f982c99e9d95",
+						"title": "Import Functions"
+					}
+				},
+				"source": [
+					"%run \"/Synapse Lakehouse Sync/Synapse Lakehouse Sync Functions\""
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "2ce075b2-ebf0-4dfe-a17f-32c8821343f7",
+						"title": "Standardize Folder Paths"
+					}
+				},
+				"source": [
+					"SyncFolderPathDict = UnifyFolderPaths('SynapseSync', f'{SynapseLakehouseSyncParameters[\"SynapseSyncDataADLSFullPath\"].rstrip(\"/\")}')\n",
+					"\n",
+					"print(SyncFolderPathDict)"
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "9d660c41-5bac-4859-9711-8b4ee74f4145",
+						"title": "Set the retentionDurationCheck config to False"
+					}
+				},
+				"source": [
+					"# Set to False to clear all history of the table (RETAIN 0 HOURS)\n",
+					"spark.conf.set(\"spark.databricks.delta.retentionDurationCheck.enabled\", False)"
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": true,
+						"nuid": "80a338ab-9890-4a8a-9b92-d4ce10a394d9",
+						"title": "Run Vacuum with 0 hour retention and Optimize on the _SynapseLakehouseSyncTracker delta table"
+					}
+				},
+				"source": [
+					"from delta import *\n",
+					"\n",
+					"vacuumStatement = f'VACUUM delta.`{SyncFolderPathDict[\"SynapseSync_abfss\"]}/{SynapseLakehouseSyncParameters[\"SynapseWorkspaceName\"]}_{SynapseLakehouseSyncParameters[\"PoolName\"]}_SynapseLakehouseSync/_SynapseLakehouseSyncTracker` RETAIN 0 HOURS'\n",
+					"print(vacuumStatement)\n",
+					"spark.sql(vacuumStatement)\n",
+					"\n",
+					"optimizeStatement = f'OPTIMIZE delta.`{SyncFolderPathDict[\"SynapseSync_abfss\"]}/{SynapseLakehouseSyncParameters[\"SynapseWorkspaceName\"]}_{SynapseLakehouseSyncParameters[\"PoolName\"]}_SynapseLakehouseSync/_SynapseLakehouseSyncTracker`'\n",
+					"print(optimizeStatement)\n",
+					"spark.sql(optimizeStatement)"
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"showTitle": false,
+						"nuid": "51bc82cb-f644-4f64-b41a-e9c32936bb27",
+						"title": ""
+					}
+				},
+				"source": [
+					""
+				],
+				"execution_count": 0
+			}
+		]
+	}
+}
