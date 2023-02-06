@@ -30,6 +30,7 @@
 
 bicepDeploymentName="Azure-Synapse-Lakehouse-Sync"
 deploymentLogFile="deployment.log"
+synapseDeployFlag = $1
 
 declare -A accountDetails
 declare -A bicepDeploymentDetails
@@ -292,18 +293,47 @@ do
 done
 
 ################################################################################
+# Synapse Workspace Notebook                                                  #
+################################################################################
+
+if $synapseDeployFlag = true
+    then
+    userOutput "STATUS" "Creating the Synapse Lakehouse Sync Notebooks..."
+
+    for synapseNotebook in '../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Notebooks'/*.json
+    do
+        # Get the Pipeline name from the JSON, not the filename
+        synapseNotebookName=$(jq -r .name "${synapseNotebook}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
+
+        createLinkedService=$(az synapse notebook create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseNotebookName}" --file @"${synapseNotebook}" 2>&1 | tee -a $deploymentLogFile)
+    done
+fi
+
+################################################################################
 # Synapse Workspace Pipelines                                                  #
 ################################################################################
 
 userOutput "STATUS" "Creating the Synapse Lakehouse Sync Pipelines..."
 
-for synapsePipeline in '../Azure Synapse Lakehouse Sync/Synapse/Pipelines'/*.json
-do
-    # Get the Pipeline name from the JSON, not the filename
-    synapsePipelineName=$(jq -r .name "${synapsePipeline}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
 
-    createLinkedService=$(az synapse pipeline create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapsePipelineName}" --file @"${synapsePipeline}" 2>&1 | tee -a $deploymentLogFile)
-done
+if $synapseDeployFlag = false
+then
+    for synapsePipeline in '../Azure Synapse Lakehouse Sync/Databricks Version/Synapse/Pipelines'/*.json
+    do
+        # Get the Pipeline name from the JSON, not the filename
+        synapsePipelineName=$(jq -r .name "${synapsePipeline}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
+
+        createLinkedService=$(az synapse pipeline create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapsePipelineName}" --file @"${synapsePipeline}" 2>&1 | tee -a $deploymentLogFile)
+    done
+else
+    for synapsePipeline in '../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Pipelines'/*.json
+    do
+        # Get the Pipeline name from the JSON, not the filename
+        synapsePipelineName=$(jq -r .name "${synapsePipeline}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
+
+        createLinkedService=$(az synapse pipeline create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapsePipelineName}" --file @"${synapsePipeline}" 2>&1 | tee -a $deploymentLogFile)
+    done
+fi
 
 ################################################################################
 # Sample Data                                                                  #
