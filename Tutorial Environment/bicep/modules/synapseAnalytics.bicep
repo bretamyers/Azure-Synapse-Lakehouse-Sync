@@ -12,6 +12,7 @@ param resourceSuffix string
 param azureRegion string
 param synapseSQLPoolName string
 param synapseSQLSecondPoolName string
+param synapseSparkPoolName string
 param synapseSQLAdministratorLogin string
 @secure()
 param synapseSQLAdministratorLoginPassword string
@@ -153,6 +154,34 @@ resource synapseSQLSecondPoolGeoBackups 'Microsoft.Synapse/workspaces/sqlPools/g
   parent: synapseSQLSecondPool
   properties: {
     state: 'Disabled'
+  }
+}
+
+// Synapse Spark Pool
+//   https://learn.microsoft.com/en-us/azure/synapse-analytics/quickstart-create-apache-spark-pool-studio
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/bigdatapools?pivots=deployment-language-bicep
+resource symbolicname 'Microsoft.Synapse/workspaces/bigDataPools@2021-06-01' = {
+  name: synapseSparkPoolName
+  location: azureRegion
+  parent: synapseAnalyticsWorkspace
+  properties: {
+    autoPause: {
+      delayInMinutes: 5
+      enabled: true
+    }
+    autoScale: {
+      enabled: false
+    }
+    cacheSize: 50
+    dynamicExecutorAllocation: {
+      enabled: true
+      maxExecutors: 4
+      minExecutors: 1
+    }
+    nodeCount: 5
+    nodeSize: 'small'
+    nodeSizeFamily: 'Memory Optimized'
+    sparkVersion: '3.3'
   }
 }
 

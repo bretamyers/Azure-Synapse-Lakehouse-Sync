@@ -21,6 +21,9 @@ param synapseSQLPoolName string
 @description('Name of the second Dedicated SQL Pool to create.')
 param synapseSQLSecondPoolName string
 
+@description('Name of the Spark Pool used to sync the delta changes.')
+param synapseSparkPoolName string
+
 @description('Native SQL account for administration.')
 param synapseSQLAdministratorLogin string
 
@@ -80,6 +83,7 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
     azureRegion: azureRegion
     synapseSQLPoolName: synapseSQLPoolName
     synapseSQLSecondPoolName: synapseSQLSecondPoolName
+    synapseSparkPoolName: synapseSparkPoolName
     synapseSQLAdministratorLogin: synapseSQLAdministratorLogin
     synapseSQLAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
@@ -112,6 +116,7 @@ output synapseStorageAccountName string = storageAccounts.outputs.synapseStorage
 output enterpriseDataLakeStorageAccountName string = storageAccounts.outputs.enterpriseDataLakeStorageAccountName
 output synapseSQLPoolName string = synapseSQLPoolName
 output synapseSQLSecondPoolName string = synapseSQLSecondPoolName
+output synapseSparkPoolName string = synapseSparkPoolName
 output synapseSQLAdministratorLogin string = synapseSQLAdministratorLogin
 output databricksWorkspaceName string = databricksWorkspace.outputs.databricksWorkspaceName
 output databricksWorkspaceUrl string = databricksWorkspace.outputs.databricksWorkspaceUrl
