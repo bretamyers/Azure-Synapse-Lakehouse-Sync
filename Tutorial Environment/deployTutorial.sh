@@ -30,7 +30,7 @@
 
 bicepDeploymentName="Azure-Synapse-Lakehouse-Sync"
 deploymentLogFile="deployment.log"
-synapseDeployFlag = $1
+synapseDeployFlag=$1
 
 declare -A accountDetails
 declare -A bicepDeploymentDetails
