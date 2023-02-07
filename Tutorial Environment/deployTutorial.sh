@@ -158,7 +158,7 @@ bicepAzureRegion=$(jq -r .parameters.azureRegion.value bicep/main.parameters.jso
 
 # Bicep deployment via Azure CLI
 userOutput "STATUS" "Deploying environment via Bicep. This may take several minutes..."
-bicepDeploy=$(az deployment sub create --template-file bicep/main.bicep --parameters bicep/main.parameters.json --name ${bicepDeploymentName} --location ${bicepAzureRegion} 2>&1 | tee -a $deploymentLogFile)
+bicepDeploy=$(az deployment sub create --template-file bicep/main.bicep --parameters bicep/main.parameters.json --name ${bicepDeploymentName} --location ${bicepAzureRegion} --synapseDeployFlag ${synapseDeployFlag} 2>&1 | tee -a $deploymentLogFile)
 
 # Make sure the Bicep deployment was successful 
 if [ $(checkBicepDeploymentState) = "Failed" ]; then
