@@ -10,7 +10,7 @@
 targetScope='subscription'
 
 @description('Synapse deployment flag for Synapse only solution.')
-param synapseDeployFlag bool
+param synapseDeployFlag string
 
 @description('Region to create all the resources in.')
 param azureRegion string
@@ -63,7 +63,7 @@ module storageAccounts 'modules/storageAccounts.bicep' = {
 }
 
 // Create the Azure Key Vault
-module keyVault 'modules/keyVault.bicep' = if (synapseDeployFlag == false) {
+module keyVault 'modules/keyVault.bicep' = if (synapseDeployFlag == 'no') {
   name: 'keyVault'
   scope: resourceGroup
   params: {
@@ -93,7 +93,7 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
   }
 
-  dependsOn: (synapseDeployFlag == false) ? [
+  dependsOn: (synapseDeployFlag == 'no') ? [
     storageAccounts
     databricksWorkspace
   ] : [
@@ -102,7 +102,7 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
 } 
 
 // Create the Databricks Workspace
-module databricksWorkspace 'modules/databricksWorkspace.bicep' = if (synapseDeployFlag == false) {
+module databricksWorkspace 'modules/databricksWorkspace.bicep' = if (synapseDeployFlag == 'no') {
   name: 'databricksWorkspace'
   scope: resourceGroup
   params: {

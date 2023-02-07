@@ -296,7 +296,7 @@ done
 # Synapse Workspace Notebook                                                  #
 ################################################################################
 
-if $synapseDeployFlag = true
+if $synapseDeployFlag = 'yes'
     then
     userOutput "STATUS" "Creating the Synapse Lakehouse Sync Notebooks..."
 
@@ -316,7 +316,7 @@ fi
 userOutput "STATUS" "Creating the Synapse Lakehouse Sync Pipelines..."
 
 
-if $synapseDeployFlag = false
+if $synapseDeployFlag = 'no'
 then
     for synapsePipeline in '../Azure Synapse Lakehouse Sync/Databricks Version/Synapse/Pipelines'/*.json
     do
