@@ -147,7 +147,7 @@ userOutput "RESULT" "Azure AD User Object Id:" ${accountDetails[azureUsernameObj
 sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${accountDetails[azureUsernameObjectId]}/g" bicep/main.parameters.json 2>&1
 
 # Update a Bicep variable to determine if its a Synapse only and Synapse and Databricks deployment.
-sed -i "s/REPLACE_SYNAPSE_DEPLOY_FLAG/${accountDetails[azureUsernameObjectId]}/g" bicep/main.parameters.json 2>&1
+sed -i "s/REPLACE_SYNAPSE_DEPLOY_FLAG/${synapseDeployFlag}/g" bicep/main.parameters.json 2>&1
 
 
 # Make sure Azure Key Vault was not deleted but also not purged. Bicep will throw an error if it's in the purged state.
