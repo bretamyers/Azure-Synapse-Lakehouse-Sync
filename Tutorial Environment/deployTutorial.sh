@@ -146,6 +146,10 @@ userOutput "RESULT" "Azure AD User Object Id:" ${accountDetails[azureUsernameObj
 # Serverless SQL to query files on storage.
 sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${accountDetails[azureUsernameObjectId]}/g" bicep/main.parameters.json 2>&1
 
+# Update a Bicep variable to determine if its a Synapse only and Synapse and Databricks deployment.
+sed -i "s/REPLACE_SYNAPSE_DEPLOY_FLAG/${accountDetails[azureUsernameObjectId]}/g" bicep/main.parameters.json 2>&1
+
+
 # Make sure Azure Key Vault was not deleted but also not purged. Bicep will throw an error if it's in the purged state.
 read keyVaultState keyVaultName < <(checkKeyVaultDeploymentState)
 if [ "${keyVaultState}" = "DeletedNotPurged" ]; then
@@ -158,7 +162,7 @@ bicepAzureRegion=$(jq -r .parameters.azureRegion.value bicep/main.parameters.jso
 
 # Bicep deployment via Azure CLI
 userOutput "STATUS" "Deploying environment via Bicep. This may take several minutes..."
-bicepDeploy=$(az deployment sub create --template-file bicep/main.bicep --parameters bicep/main.parameters.json ${synapseDeployFlag} --name ${bicepDeploymentName} --location ${bicepAzureRegion} 2>&1 | tee -a $deploymentLogFile)
+bicepDeploy=$(az deployment sub create --template-file bicep/main.bicep --parameters bicep/main.parameters.json --name ${bicepDeploymentName} --location ${bicepAzureRegion} 2>&1 | tee -a $deploymentLogFile)
 
 # Make sure the Bicep deployment was successful 
 if [ $(checkBicepDeploymentState) = "Failed" ]; then
