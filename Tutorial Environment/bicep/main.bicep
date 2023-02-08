@@ -81,54 +81,8 @@ module keyVault 'modules/keyVault.bicep' = if (synapseDeployFlag == 'no') {
   ]
 }
 
-// // Create the Synapse Analytics Workspace
-// module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
-//   name: 'synapseAnalytics'
-//   scope: resourceGroup
-//   params: {
-//     synapseDeployFlag: synapseDeployFlag
-//     resourceSuffix: resourceSuffix
-//     azureRegion: azureRegion
-//     synapseSQLPoolName: synapseSQLPoolName
-//     synapseSQLSecondPoolName: synapseSQLSecondPoolName
-//     synapseSparkPoolName: synapseSparkPoolName
-//     synapseSQLAdministratorLogin: synapseSQLAdministratorLogin
-//     synapseSQLAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
-//     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
-//   }
-
-//   dependsOn: (synapseDeployFlag == 'no') ? [
-//     storageAccounts
-//     databricksWorkspace
-//   ] : [
-//     storageAccounts
-//   ]
-// } 
-
 // Create the Synapse Analytics Workspace
-module synapseAnalyticsDatabricks 'modules/synapseAnalytics.bicep' = if (synapseDeployFlag == 'no') {
-  name: 'synapseAnalyticsDatabricks'
-  scope: resourceGroup
-  params: {
-    synapseDeployFlag: synapseDeployFlag
-    resourceSuffix: resourceSuffix
-    azureRegion: azureRegion
-    synapseSQLPoolName: synapseSQLPoolName
-    synapseSQLSecondPoolName: synapseSQLSecondPoolName
-    synapseSparkPoolName: synapseSparkPoolName
-    synapseSQLAdministratorLogin: synapseSQLAdministratorLogin
-    synapseSQLAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
-    synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
-  }
-
-  dependsOn: [
-    storageAccounts
-    databricksWorkspace
-  ]
-} 
-
-// Create the Synapse Analytics Workspace
-module synapseAnalytics 'modules/synapseAnalytics.bicep' = if (synapseDeployFlag == 'yes') {
+module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
   name: 'synapseAnalytics'
   scope: resourceGroup
   params: {
@@ -143,10 +97,56 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = if (synapseDeployFlag
     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
   }
 
-  dependsOn: [
+  dependsOn: (synapseDeployFlag == 'no') ? [
+    storageAccounts
+    databricksWorkspace
+  ] : [
     storageAccounts
   ]
 } 
+
+// // Create the Synapse Analytics Workspace
+// module synapseAnalyticsDatabricks 'modules/synapseAnalytics.bicep' = if (synapseDeployFlag == 'no') {
+//   name: 'synapseAnalyticsDatabricks'
+//   scope: resourceGroup
+//   params: {
+//     synapseDeployFlag: synapseDeployFlag
+//     resourceSuffix: resourceSuffix
+//     azureRegion: azureRegion
+//     synapseSQLPoolName: synapseSQLPoolName
+//     synapseSQLSecondPoolName: synapseSQLSecondPoolName
+//     synapseSparkPoolName: synapseSparkPoolName
+//     synapseSQLAdministratorLogin: synapseSQLAdministratorLogin
+//     synapseSQLAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
+//     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
+//   }
+
+//   dependsOn: [
+//     storageAccounts
+//     databricksWorkspace
+//   ]
+// } 
+
+// // Create the Synapse Analytics Workspace
+// module synapseAnalytics 'modules/synapseAnalytics.bicep' = if (synapseDeployFlag == 'yes') {
+//   name: 'synapseAnalytics'
+//   scope: resourceGroup
+//   params: {
+//     synapseDeployFlag: synapseDeployFlag
+//     resourceSuffix: resourceSuffix
+//     azureRegion: azureRegion
+//     synapseSQLPoolName: synapseSQLPoolName
+//     synapseSQLSecondPoolName: synapseSQLSecondPoolName
+//     synapseSparkPoolName: synapseSparkPoolName
+//     synapseSQLAdministratorLogin: synapseSQLAdministratorLogin
+//     synapseSQLAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
+//     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
+//   }
+
+//   dependsOn: [
+//     storageAccounts
+//   ]
+// } 
 
 // Create the Databricks Workspace
 module databricksWorkspace 'modules/databricksWorkspace.bicep' = if (synapseDeployFlag == 'no') {
@@ -171,9 +171,9 @@ output synapseSQLPoolName string = synapseSQLPoolName
 output synapseSQLSecondPoolName string = synapseSQLSecondPoolName
 output synapseSparkPoolName string = synapseSparkPoolName
 output synapseSQLAdministratorLogin string = synapseSQLAdministratorLogin
-// output databricksWorkspaceName string = databricksWorkspace.outputs.databricksWorkspaceName
-// output databricksWorkspaceUrl string = databricksWorkspace.outputs.databricksWorkspaceUrl
-// output databricksWorkspaceId string = databricksWorkspace.outputs.databricksWorkspaceId
-// output keyVaultName string = keyVault.outputs.keyVaultName
-// output keyVaultVaultUri string = keyVault.outputs.keyVaultVaultUri
-// output keyVaultId string = keyVault.outputs.keyVaultId
+output databricksWorkspaceName string = (synapseDeployFlag == 'yes') ? 'NA' : databricksWorkspace.outputs.databricksWorkspaceName
+output databricksWorkspaceUrl string = (synapseDeployFlag == 'yes') ? 'NA' : databricksWorkspace.outputs.databricksWorkspaceUrl
+output databricksWorkspaceId string = (synapseDeployFlag == 'yes') ? 'NA' : databricksWorkspace.outputs.databricksWorkspaceId
+output keyVaultName string = (synapseDeployFlag == 'yes') ? 'NA' : keyVault.outputs.keyVaultName
+output keyVaultVaultUri string = (synapseDeployFlag == 'yes') ? 'NA' : keyVault.outputs.keyVaultVaultUri
+output keyVaultId string = (synapseDeployFlag == 'yes') ? 'NA' : keyVault.outputs.keyVaultId
