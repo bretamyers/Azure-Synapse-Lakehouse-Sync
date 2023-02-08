@@ -174,7 +174,7 @@ fi
 # Part 2: Post-Deployment Configuration                                        #
 ################################################################################
 
-bicepOutputVariables=("resourceGroup" "synapseAnalyticsWorkspaceName" "synapseStorageAccountName" "enterpriseDataLakeStorageAccountName" "synapseSQLPoolName" "synapseSQLSecondPoolName" "synapseSQLAdministratorLogin" "databricksWorkspaceName" "databricksWorkspaceUrl" "databricksWorkspaceId" "keyVaultVaultUri" "keyVaultId")
+bicepOutputVariables=("resourceGroup" "synapseAnalyticsWorkspaceName" "synapseStorageAccountName" "enterpriseDataLakeStorageAccountName" "synapseSQLPoolName" "synapseSQLSecondPoolName" "synapseSparkPoolName" "synapseSQLAdministratorLogin" "databricksWorkspaceName" "databricksWorkspaceUrl" "databricksWorkspaceId" "keyVaultVaultUri" "keyVaultId")
 
 # Get the output variables from the Bicep deployment
 for bicepVariable in "${bicepOutputVariables[@]}"; do 
@@ -327,12 +327,10 @@ if [ $synapseDeployFlag = 'yes' ];
     then
     userOutput "STATUS" "Creating the Synapse Lakehouse Sync Notebooks..."
 
-    for synapseNotebook in "../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Notebooks/"*.json
+    for synapseNotebook in "../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Notebooks/"*.ipynb
     do
-        # Get the Pipeline name from the JSON, not the filename
-        synapseNotebookName=$(jq -r .name "${synapseNotebook}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
-
-        createSynapseNotebook=$(az synapse notebook create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseNotebookName}" --file @"${synapseNotebook}" 2>&1 | tee -a $deploymentLogFile)
+        synapseNotebookName=$(basename "$synapseNotebook" ".ipynb")
+        createSynapseNotebook=$(az synapse notebook import --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseNotebookName}" --file @"${synapseNotebook}" --spark-pool-name synapseSparkPoolName 2>&1 | tee -a $deploymentLogFile)
     done
 fi
 
