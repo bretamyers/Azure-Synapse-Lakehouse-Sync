@@ -277,7 +277,7 @@ userOutput "STATUS" "Creating the Synapse Workspace Linked Services..."
 
 if [ $synapseDeployFlag = 'no' ];
 then
-    for synapseLinkedService in '../Azure Synapse Lakehouse Sync/'$version'/Synapse/Linked Services'/*.json
+    for synapseLinkedService in "../Azure Synapse Lakehouse Sync/$version/Synapse/Linked Services/*.json"
     do
         # Get the Link Service name from the JSON, not the filename
         synapseLinkedServiceName=$(jq -r .name "${synapseLinkedService}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -292,7 +292,7 @@ then
         rm "${synapseLinkedService}.tmp"
     done
 else
-    for synapseLinkedService in '../Azure Synapse Lakehouse Sync/'$version'/Synapse/Linked Services'/*.json
+    for synapseLinkedService in "../Azure Synapse Lakehouse Sync/$version/Synapse/Linked Services/*.json"
     do
         # Get the Link Service name from the JSON, not the filename
         synapseLinkedServiceName=$(jq -r .name "${synapseLinkedService}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -311,7 +311,7 @@ fi
 
 userOutput "STATUS" "Creating the Synapse Workspace Datasets..."
 
-for synapseDataSet in '../Azure Synapse Lakehouse Sync/'$version'/Synapse/Datasets'/*.json
+for synapseDataSet in "../Azure Synapse Lakehouse Sync/$version/Synapse/Datasets/*.json"
 do
     # Get the Dataset name from the JSON, not the filename
     synapseDataSetName=$(jq -r .name "${synapseDataSet}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -327,7 +327,7 @@ if [ $synapseDeployFlag = 'yes' ];
     then
     userOutput "STATUS" "Creating the Synapse Lakehouse Sync Notebooks..."
 
-    for synapseNotebook in '../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Notebooks'/*.json
+    for synapseNotebook in "../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Notebooks/*.json"
     do
         # Get the Pipeline name from the JSON, not the filename
         synapseNotebookName=$(jq -r .name "${synapseNotebook}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -345,7 +345,7 @@ userOutput "STATUS" "Creating the Synapse Lakehouse Sync Pipelines..."
 
 if [ $synapseDeployFlag = 'no' ];
 then
-    for synapsePipeline in '../Azure Synapse Lakehouse Sync/Databricks Version/Synapse/Pipelines'/*.json
+    for synapsePipeline in "../Azure Synapse Lakehouse Sync/Databricks Version/Synapse/Pipelines/*.json"
     do
         # Get the Pipeline name from the JSON, not the filename
         synapsePipelineName=$(jq -r .name "${synapsePipeline}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -353,7 +353,7 @@ then
         createLinkedService=$(az synapse pipeline create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapsePipelineName}" --file @"${synapsePipeline}" 2>&1 | tee -a $deploymentLogFile)
     done
 else
-    for synapsePipeline in '../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Pipelines'/*.json
+    for synapsePipeline in "../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Pipelines/*.json"
     do
         # Get the Pipeline name from the JSON, not the filename
         synapsePipelineName=$(jq -r .name "${synapsePipeline}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -383,12 +383,12 @@ sampleDataCopy=$(az storage copy -s "https://${sampleDataStorageAccount}.blob.co
 # Update the Auto Loader Metadata file template with the correct storage account and then upload it
 enterpriseDataLakeScopeSecretName="EnterpriseDataLakeAccountKey"
 synapseStorageScopeSecretName="SynapseStorageAccountKey"
-sed -i "s/REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}/g" "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
-sed -i "s/REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[synapseStorageAccountName]}/g" "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
-sed -i "s/REPLACE_DATABRICKS_SCOPE_NAME/${databricksScopeName}/g" "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
-sed -i "s/REPLACE_ENTERPRISE_DATALAKE_SCOPE_SECRET_NAME/${enterpriseDataLakeScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
-sed -i "s/REPLACE_SYNAPSE_STORAGE_SCOPE_SECRET_NAME/${synapseStorageScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
-sampleDataCopy=$(az storage copy -s "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv" -d "https://${bicepDeploymentDetails[synapseStorageAccountName]}.blob.core.windows.net/synapsesync?${synapseStorageAccountSAS}" 2>&1 >> $deploymentLogFile)
+sed -i "s/REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}/g" "../Azure Synapse Lakehouse Sync/$version/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[synapseStorageAccountName]}/g" "../Azure Synapse Lakehouse Sync/$version/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_DATABRICKS_SCOPE_NAME/${databricksScopeName}/g" "../Azure Synapse Lakehouse Sync/$version/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_ENTERPRISE_DATALAKE_SCOPE_SECRET_NAME/${enterpriseDataLakeScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/$version/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_SYNAPSE_STORAGE_SCOPE_SECRET_NAME/${synapseStorageScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/$version/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sampleDataCopy=$(az storage copy -s "../Azure Synapse Lakehouse Sync/$version/Synapse/Synapse_Lakehouse_Sync_Metadata.csv" -d "https://${bicepDeploymentDetails[synapseStorageAccountName]}.blob.core.windows.net/synapsesync?${synapseStorageAccountSAS}" 2>&1 >> $deploymentLogFile)
 
 # Display the deployment details to the user
 userOutput "DEPLOYMENT" "Deployment:" "Complete"
