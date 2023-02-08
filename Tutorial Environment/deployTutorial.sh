@@ -263,7 +263,7 @@ if [ $synapseDeployFlag == 'no' ]; then
 else
     version='Synapse Version'
 fi
-for synapseQuery in '../Azure Synapse Lakehouse Sync/'$version'/Synapse/Queries'/*.sql
+for synapseQuery in "../Azure Synapse Lakehouse Sync/$version/Synapse/Queries/"*.sql
 do
     executeQuery=$(sqlcmd -U ${bicepDeploymentDetails[synapseSQLAdministratorLogin]} -P ${bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]} -S tcp:${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}.sql.azuresynapse.net -d ${bicepDeploymentDetails[synapseSQLPoolName]} -I -i "${synapseQuery}" 2>&1 | tee -a $deploymentLogFile)
     executeQuery=$(sqlcmd -U ${bicepDeploymentDetails[synapseSQLAdministratorLogin]} -P ${bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]} -S tcp:${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}.sql.azuresynapse.net -d ${bicepDeploymentDetails[synapseSQLSecondPoolName]} -I -i "${synapseQuery}" 2>&1 | tee -a $deploymentLogFile)
@@ -277,7 +277,7 @@ userOutput "STATUS" "Creating the Synapse Workspace Linked Services..."
 
 if [ $synapseDeployFlag = 'no' ];
 then
-    for synapseLinkedService in "../Azure Synapse Lakehouse Sync/$version/Synapse/Linked Services/*.json"
+    for synapseLinkedService in "../Azure Synapse Lakehouse Sync/$version/Synapse/Linked Services/"*.json
     do
         # Get the Link Service name from the JSON, not the filename
         synapseLinkedServiceName=$(jq -r .name "${synapseLinkedService}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -292,7 +292,7 @@ then
         rm "${synapseLinkedService}.tmp"
     done
 else
-    for synapseLinkedService in "../Azure Synapse Lakehouse Sync/$version/Synapse/Linked Services/*.json"
+    for synapseLinkedService in "../Azure Synapse Lakehouse Sync/$version/Synapse/Linked Services/"*.json
     do
         # Get the Link Service name from the JSON, not the filename
         synapseLinkedServiceName=$(jq -r .name "${synapseLinkedService}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -311,7 +311,7 @@ fi
 
 userOutput "STATUS" "Creating the Synapse Workspace Datasets..."
 
-for synapseDataSet in "../Azure Synapse Lakehouse Sync/$version/Synapse/Datasets/*.json"
+for synapseDataSet in "../Azure Synapse Lakehouse Sync/$version/Synapse/Datasets/"*.json
 do
     # Get the Dataset name from the JSON, not the filename
     synapseDataSetName=$(jq -r .name "${synapseDataSet}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -327,7 +327,7 @@ if [ $synapseDeployFlag = 'yes' ];
     then
     userOutput "STATUS" "Creating the Synapse Lakehouse Sync Notebooks..."
 
-    for synapseNotebook in "../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Notebooks/*.json"
+    for synapseNotebook in "../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Notebooks/"*.json
     do
         # Get the Pipeline name from the JSON, not the filename
         synapseNotebookName=$(jq -r .name "${synapseNotebook}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -344,7 +344,7 @@ userOutput "STATUS" "Creating the Synapse Lakehouse Sync Pipelines..."
 
 if [ $synapseDeployFlag = 'no' ];
 then
-    for synapsePipeline in "../Azure Synapse Lakehouse Sync/Databricks Version/Synapse/Pipelines/*.json"
+    for synapsePipeline in "../Azure Synapse Lakehouse Sync/Databricks Version/Synapse/Pipelines/"*.json
     do
         # Get the Pipeline name from the JSON, not the filename
         synapsePipelineName=$(jq -r .name "${synapsePipeline}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
@@ -352,7 +352,7 @@ then
         createLinkedService=$(az synapse pipeline create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapsePipelineName}" --file @"${synapsePipeline}" 2>&1 | tee -a $deploymentLogFile)
     done
 else
-    for synapsePipeline in "../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Pipelines/*.json"
+    for synapsePipeline in "../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Pipelines/"*.json
     do
         # Get the Pipeline name from the JSON, not the filename
         synapsePipelineName=$(jq -r .name "${synapsePipeline}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
