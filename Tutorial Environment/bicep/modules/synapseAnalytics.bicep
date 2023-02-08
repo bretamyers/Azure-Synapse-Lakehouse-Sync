@@ -8,8 +8,11 @@
 
 targetScope = 'resourceGroup'
 
-
-param synapseDeployFlag string
+@allowed([
+  'yes'
+  'no'
+])
+param synapseDeployFlag string = 'no'
 param resourceSuffix string
 param azureRegion string
 param synapseSQLPoolName string

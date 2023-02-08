@@ -9,6 +9,10 @@
 
 targetScope='subscription'
 
+@allowed([
+  'yes'
+  'no'
+])
 @description('Synapse deployment flag for Synapse only solution.')
 param synapseDeployFlag string = 'no'
 
