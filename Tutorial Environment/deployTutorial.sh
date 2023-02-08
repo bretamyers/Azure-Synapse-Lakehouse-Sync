@@ -191,7 +191,7 @@ done
 # Get the Synapse AQL Administrator Login Password from the Bicep main.parameters.json
 bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]=$(jq -r .parameters.synapseSQLAdministratorLoginPassword.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
-if $synapseDeployFlag = 'no'
+if [ $synapseDeployFlag = 'no' ];
 then
     # Get the Databricks Workspace Azure AD accessToken for authentication
     databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output tsv --query accessToken 2>&1 | sed 's/[[:space:]]*//g')
@@ -275,7 +275,7 @@ done
 
 userOutput "STATUS" "Creating the Synapse Workspace Linked Services..."
 
-if $synapseDeployFlag = 'no'
+if [ $synapseDeployFlag = 'no' ];
 then
     for synapseLinkedService in '../Azure Synapse Lakehouse Sync/'$version'/Synapse/Linked Services'/*.json
     do
@@ -323,7 +323,7 @@ done
 # Synapse Workspace Notebook                                                  #
 ################################################################################
 
-if $synapseDeployFlag = 'yes'
+if [ $synapseDeployFlag = 'yes' ];
     then
     userOutput "STATUS" "Creating the Synapse Lakehouse Sync Notebooks..."
 
@@ -343,7 +343,7 @@ fi
 userOutput "STATUS" "Creating the Synapse Lakehouse Sync Pipelines..."
 
 
-if $synapseDeployFlag = 'no'
+if [ $synapseDeployFlag = 'no' ];
 then
     for synapsePipeline in '../Azure Synapse Lakehouse Sync/Databricks Version/Synapse/Pipelines'/*.json
     do
@@ -383,12 +383,12 @@ sampleDataCopy=$(az storage copy -s "https://${sampleDataStorageAccount}.blob.co
 # Update the Auto Loader Metadata file template with the correct storage account and then upload it
 enterpriseDataLakeScopeSecretName="EnterpriseDataLakeAccountKey"
 synapseStorageScopeSecretName="SynapseStorageAccountKey"
-sed -i "s/REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
-sed -i "s/REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[synapseStorageAccountName]}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
-sed -i "s/REPLACE_DATABRICKS_SCOPE_NAME/${databricksScopeName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
-sed -i "s/REPLACE_ENTERPRISE_DATALAKE_SCOPE_SECRET_NAME/${enterpriseDataLakeScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
-sed -i "s/REPLACE_SYNAPSE_STORAGE_SCOPE_SECRET_NAME/${synapseStorageScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
-sampleDataCopy=$(az storage copy -s "../Azure Synapse Lakehouse Sync/Synapse/Synapse_Lakehouse_Sync_Metadata.csv" -d "https://${bicepDeploymentDetails[synapseStorageAccountName]}.blob.core.windows.net/synapsesync?${synapseStorageAccountSAS}" 2>&1 >> $deploymentLogFile)
+sed -i "s/REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}/g" "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_SYNAPSE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[synapseStorageAccountName]}/g" "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_DATABRICKS_SCOPE_NAME/${databricksScopeName}/g" "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_ENTERPRISE_DATALAKE_SCOPE_SECRET_NAME/${enterpriseDataLakeScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sed -i "s/REPLACE_SYNAPSE_STORAGE_SCOPE_SECRET_NAME/${synapseStorageScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
+sampleDataCopy=$(az storage copy -s "../Azure Synapse Lakehouse Sync/'$version'/Synapse/Synapse_Lakehouse_Sync_Metadata.csv" -d "https://${bicepDeploymentDetails[synapseStorageAccountName]}.blob.core.windows.net/synapsesync?${synapseStorageAccountSAS}" 2>&1 >> $deploymentLogFile)
 
 # Display the deployment details to the user
 userOutput "DEPLOYMENT" "Deployment:" "Complete"
