@@ -81,8 +81,54 @@ module keyVault 'modules/keyVault.bicep' = if (synapseDeployFlag == 'no') {
   ]
 }
 
+// // Create the Synapse Analytics Workspace
+// module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
+//   name: 'synapseAnalytics'
+//   scope: resourceGroup
+//   params: {
+//     synapseDeployFlag: synapseDeployFlag
+//     resourceSuffix: resourceSuffix
+//     azureRegion: azureRegion
+//     synapseSQLPoolName: synapseSQLPoolName
+//     synapseSQLSecondPoolName: synapseSQLSecondPoolName
+//     synapseSparkPoolName: synapseSparkPoolName
+//     synapseSQLAdministratorLogin: synapseSQLAdministratorLogin
+//     synapseSQLAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
+//     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
+//   }
+
+//   dependsOn: (synapseDeployFlag == 'no') ? [
+//     storageAccounts
+//     databricksWorkspace
+//   ] : [
+//     storageAccounts
+//   ]
+// } 
+
 // Create the Synapse Analytics Workspace
-module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
+module synapseAnalyticsDatabricks 'modules/synapseAnalytics.bicep' = if (synapseDeployFlag == 'no') {
+  name: 'synapseAnalyticsDatabricks'
+  scope: resourceGroup
+  params: {
+    synapseDeployFlag: synapseDeployFlag
+    resourceSuffix: resourceSuffix
+    azureRegion: azureRegion
+    synapseSQLPoolName: synapseSQLPoolName
+    synapseSQLSecondPoolName: synapseSQLSecondPoolName
+    synapseSparkPoolName: synapseSparkPoolName
+    synapseSQLAdministratorLogin: synapseSQLAdministratorLogin
+    synapseSQLAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
+    synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
+  }
+
+  dependsOn: [
+    storageAccounts
+    databricksWorkspace
+  ]
+} 
+
+// Create the Synapse Analytics Workspace
+module synapseAnalytics 'modules/synapseAnalytics.bicep' = if (synapseDeployFlag == 'yes') {
   name: 'synapseAnalytics'
   scope: resourceGroup
   params: {
@@ -97,10 +143,7 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
   }
 
-  dependsOn: (synapseDeployFlag == 'no') ? [
-    storageAccounts
-    databricksWorkspace
-  ] : [
+  dependsOn: [
     storageAccounts
   ]
 } 

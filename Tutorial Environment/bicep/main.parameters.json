@@ -25,8 +25,7 @@
     },
     "synapseAzureADAdminObjectId": {
       "value": "REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID"
-    }
-    ,
+    },
     "synapseDeployFlag": {
       "value": "REPLACE_SYNAPSE_DEPLOY_FLAG"
     }
