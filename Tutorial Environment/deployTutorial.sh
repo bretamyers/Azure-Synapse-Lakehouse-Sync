@@ -30,7 +30,7 @@
 
 bicepDeploymentName="Azure-Synapse-Lakehouse-Sync"
 deploymentLogFile="deployment.log"
-synapseDeployFlag=${1:no}
+synapseDeployFlag=${1:-no}
 
 declare -A accountDetails
 declare -A bicepDeploymentDetails
@@ -191,49 +191,52 @@ done
 # Get the Synapse AQL Administrator Login Password from the Bicep main.parameters.json
 bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]=$(jq -r .parameters.synapseSQLAdministratorLoginPassword.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
-# Get the Databricks Workspace Azure AD accessToken for authentication
-databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output tsv --query accessToken 2>&1 | sed 's/[[:space:]]*//g')
+if $synapseDeployFlag = 'no'
+then
+    # Get the Databricks Workspace Azure AD accessToken for authentication
+    databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output tsv --query accessToken 2>&1 | sed 's/[[:space:]]*//g')
 
-################################################################################
-# Databricks Workspace Settings                                                #
-################################################################################
+    ################################################################################
+    # Databricks Workspace Settings                                                #
+    ################################################################################
 
-# Create the Azure Key Vault Scope in the Databricks Workspace
-userOutput "STATUS" "Creating the Databricks Workspace Azure Key Vault Scope..."
-databricksScopeName="AzureKeyVaultScope"
-createDatabricksKeyVaultScope=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/secrets/scopes/create --body "{ \"scope\": \"${databricksScopeName}\", \"scope_backend_type\": \"AZURE_KEYVAULT\", \"backend_azure_keyvault\": { \"resource_id\": \"${bicepDeploymentDetails[keyVaultId]}\", \"dns_name\": \"${bicepDeploymentDetails[keyVaultVaultUri]}\" }, \"initial_manage_principal\": \"users\" }" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" 2>&1 | tee -a $deploymentLogFile)
+    # Create the Azure Key Vault Scope in the Databricks Workspace
+    userOutput "STATUS" "Creating the Databricks Workspace Azure Key Vault Scope..."
+    databricksScopeName="AzureKeyVaultScope"
+    createDatabricksKeyVaultScope=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/secrets/scopes/create --body "{ \"scope\": \"${databricksScopeName}\", \"scope_backend_type\": \"AZURE_KEYVAULT\", \"backend_azure_keyvault\": { \"resource_id\": \"${bicepDeploymentDetails[keyVaultId]}\", \"dns_name\": \"${bicepDeploymentDetails[keyVaultVaultUri]}\" }, \"initial_manage_principal\": \"users\" }" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" 2>&1 | tee -a $deploymentLogFile)
 
-# Create the Databricks Cluster
-userOutput "STATUS" "Creating the Databricks Workspace Cluster definition..."
-createDatabricksCluster=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/Cluster Definition/SynapseLakehouseSyncCluster.json" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" --query cluster_id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+    # Create the Databricks Cluster
+    userOutput "STATUS" "Creating the Databricks Workspace Cluster definition..."
+    createDatabricksCluster=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/Cluster Definition/SynapseLakehouseSyncCluster.json" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" --query cluster_id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 
-################################################################################
-# Databricks Workspace Notebooks                                               #
-################################################################################
+    ################################################################################
+    # Databricks Workspace Notebooks                                               #
+    ################################################################################
 
-userOutput "STATUS" "Creating the Databricks Workspace Notebooks..."
+    userOutput "STATUS" "Creating the Databricks Workspace Notebooks..."
 
-# Create the Databricks Workspace folders for the notebooks
-for databricksNotebookFolder in '../Azure Synapse Lakehouse Sync/Databricks/Notebooks'/*/
-do
-    workspaceFolder=$(awk -F/ '{ print $(NF-1) }' <<< ${databricksNotebookFolder})
-    databricksNotebookCreate=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/workspace/mkdirs --body "{ \"path\": \"/${workspaceFolder}\" }" --headers "{ \"Authorization\": \"Bearer ${databricksAccessToken}\", \"Content-Type\": \"application/json\" }" 2>&1 | tee -a $deploymentLogFile)
-done
+    # Create the Databricks Workspace folders for the notebooks
+    for databricksNotebookFolder in '../Azure Synapse Lakehouse Sync/Databricks/Notebooks'/*/
+    do
+        workspaceFolder=$(awk -F/ '{ print $(NF-1) }' <<< ${databricksNotebookFolder})
+        databricksNotebookCreate=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/workspace/mkdirs --body "{ \"path\": \"/${workspaceFolder}\" }" --headers "{ \"Authorization\": \"Bearer ${databricksAccessToken}\", \"Content-Type\": \"application/json\" }" 2>&1 | tee -a $deploymentLogFile)
+    done
 
-# Create the Databricks Workspace notebooks
-for databricksNotebook in '../Azure Synapse Lakehouse Sync/Databricks/Notebooks'/*/*.dbc
-do
-    # Parse out the notebook file and path names
-    databricksNotebookPath=${databricksNotebook%/*}
-    databricksNotebookFolder=$(awk -F/ '{ print $(NF-1) }' <<< ${databricksNotebook})
-    databricksNotebookName=$(basename "${databricksNotebook}" .dbc)
+    # Create the Databricks Workspace notebooks
+    for databricksNotebook in '../Azure Synapse Lakehouse Sync/Databricks/Notebooks'/*/*.dbc
+    do
+        # Parse out the notebook file and path names
+        databricksNotebookPath=${databricksNotebook%/*}
+        databricksNotebookFolder=$(awk -F/ '{ print $(NF-1) }' <<< ${databricksNotebook})
+        databricksNotebookName=$(basename "${databricksNotebook}" .dbc)
 
-    # Base64 encode the notebook and POST to the Databricks Workspace API
-    databricksNotebookBase64=$(base64 -w 0 "${databricksNotebook}" 2>&1 | sed 's/[[:space:]]*//g')
-    echo "{ \"path\": \"/${databricksNotebookFolder}/${databricksNotebookName}\", \"content\": \"${databricksNotebookBase64}\", \"format\": \"DBC\" }" > "${databricksNotebook}.json.tmp"
-    databricksNotebookCreate=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/workspace/import --body "@${databricksNotebook}.json.tmp" --headers "{ \"Authorization\": \"Bearer ${databricksAccessToken}\", \"Content-Type\": \"application/json\" }" 2>&1 | tee -a $deploymentLogFile)
-    rm "${databricksNotebook}.json.tmp"
-done
+        # Base64 encode the notebook and POST to the Databricks Workspace API
+        databricksNotebookBase64=$(base64 -w 0 "${databricksNotebook}" 2>&1 | sed 's/[[:space:]]*//g')
+        echo "{ \"path\": \"/${databricksNotebookFolder}/${databricksNotebookName}\", \"content\": \"${databricksNotebookBase64}\", \"format\": \"DBC\" }" > "${databricksNotebook}.json.tmp"
+        databricksNotebookCreate=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/workspace/import --body "@${databricksNotebook}.json.tmp" --headers "{ \"Authorization\": \"Bearer ${databricksAccessToken}\", \"Content-Type\": \"application/json\" }" 2>&1 | tee -a $deploymentLogFile)
+        rm "${databricksNotebook}.json.tmp"
+    done
+fi
 
 ################################################################################
 # Synapse Queries                                                              #
@@ -255,7 +258,12 @@ elif [[ "${executeQuery}" == *"Login timeout expired"* ]]; then
 fi
 
 # Execute all other queries against the new database
-for synapseQuery in '../Azure Synapse Lakehouse Sync/Synapse/Queries'/*.sql
+if [ $synapseDeployFlag == 'no' ]; then
+    version='Databricks Version'
+else
+    version='Synapse Version'
+fi
+for synapseQuery in '../Azure Synapse Lakehouse Sync/'$version'/Synapse/Queries'/*.sql
 do
     executeQuery=$(sqlcmd -U ${bicepDeploymentDetails[synapseSQLAdministratorLogin]} -P ${bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]} -S tcp:${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}.sql.azuresynapse.net -d ${bicepDeploymentDetails[synapseSQLPoolName]} -I -i "${synapseQuery}" 2>&1 | tee -a $deploymentLogFile)
     executeQuery=$(sqlcmd -U ${bicepDeploymentDetails[synapseSQLAdministratorLogin]} -P ${bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]} -S tcp:${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]}.sql.azuresynapse.net -d ${bicepDeploymentDetails[synapseSQLSecondPoolName]} -I -i "${synapseQuery}" 2>&1 | tee -a $deploymentLogFile)
@@ -267,20 +275,35 @@ done
 
 userOutput "STATUS" "Creating the Synapse Workspace Linked Services..."
 
-for synapseLinkedService in '../Azure Synapse Lakehouse Sync/Synapse/Linked Services'/*.json
-do
-    # Get the Link Service name from the JSON, not the filename
-    synapseLinkedServiceName=$(jq -r .name "${synapseLinkedService}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
+if $synapseDeployFlag = 'no'
+then
+    for synapseLinkedService in '../Azure Synapse Lakehouse Sync/'$version'/Synapse/Linked Services'/*.json
+    do
+        # Get the Link Service name from the JSON, not the filename
+        synapseLinkedServiceName=$(jq -r .name "${synapseLinkedService}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
 
-    cp "${synapseLinkedService}" "${synapseLinkedService}.tmp" 2>&1
-    sed -i "s|REPLACE_DATABRICKS_WORKSPACE_URL|https://${bicepDeploymentDetails[databricksWorkspaceUrl]}|g" "${synapseLinkedService}.tmp"
-    sed -i "s|REPLACE_DATABRICKS_WORKSPACE_ID|${bicepDeploymentDetails[databricksWorkspaceId]}|g" "${synapseLinkedService}.tmp"
-    sed -i "s|REPLACE_DATABRICKS_CLUSTER_ID|${createDatabricksCluster}|g" "${synapseLinkedService}.tmp"
-    sed -i "s|REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME|${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}|g" "${synapseLinkedService}.tmp"
+        cp "${synapseLinkedService}" "${synapseLinkedService}.tmp" 2>&1
+        sed -i "s|REPLACE_DATABRICKS_WORKSPACE_URL|https://${bicepDeploymentDetails[databricksWorkspaceUrl]}|g" "${synapseLinkedService}.tmp"
+        sed -i "s|REPLACE_DATABRICKS_WORKSPACE_ID|${bicepDeploymentDetails[databricksWorkspaceId]}|g" "${synapseLinkedService}.tmp"
+        sed -i "s|REPLACE_DATABRICKS_CLUSTER_ID|${createDatabricksCluster}|g" "${synapseLinkedService}.tmp"
+        sed -i "s|REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME|${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}|g" "${synapseLinkedService}.tmp"
 
-    createLinkedService=$(az synapse linked-service create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseLinkedServiceName}" --file @"${synapseLinkedService}.tmp" 2>&1 | tee -a $deploymentLogFile)
-    rm "${synapseLinkedService}.tmp"
-done
+        createLinkedService=$(az synapse linked-service create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseLinkedServiceName}" --file @"${synapseLinkedService}.tmp" 2>&1 | tee -a $deploymentLogFile)
+        rm "${synapseLinkedService}.tmp"
+    done
+else
+    for synapseLinkedService in '../Azure Synapse Lakehouse Sync/'$version'/Synapse/Linked Services'/*.json
+    do
+        # Get the Link Service name from the JSON, not the filename
+        synapseLinkedServiceName=$(jq -r .name "${synapseLinkedService}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
+
+        cp "${synapseLinkedService}" "${synapseLinkedService}.tmp" 2>&1
+        sed -i "s|REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME|${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}|g" "${synapseLinkedService}.tmp"
+
+        createLinkedService=$(az synapse linked-service create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseLinkedServiceName}" --file @"${synapseLinkedService}.tmp" 2>&1 | tee -a $deploymentLogFile)
+        rm "${synapseLinkedService}.tmp"
+    done
+fi
 
 ################################################################################
 # Synapse Workspace Datasets                                                   #
@@ -288,7 +311,7 @@ done
 
 userOutput "STATUS" "Creating the Synapse Workspace Datasets..."
 
-for synapseDataSet in '../Azure Synapse Lakehouse Sync/Synapse/Datasets'/*.json
+for synapseDataSet in '../Azure Synapse Lakehouse Sync/'$version'/Synapse/Datasets'/*.json
 do
     # Get the Dataset name from the JSON, not the filename
     synapseDataSetName=$(jq -r .name "${synapseDataSet}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
