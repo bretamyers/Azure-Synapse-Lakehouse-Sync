@@ -10,7 +10,7 @@
 targetScope='subscription'
 
 @description('Synapse deployment flag for Synapse only solution.')
-param synapseDeployFlag string
+param synapseDeployFlag string = 'no'
 
 @description('Region to create all the resources in.')
 param azureRegion string
