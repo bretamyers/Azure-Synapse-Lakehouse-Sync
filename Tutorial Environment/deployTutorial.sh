@@ -342,7 +342,6 @@ fi
 
 userOutput "STATUS" "Creating the Synapse Lakehouse Sync Pipelines..."
 
-
 if [ $synapseDeployFlag = 'no' ];
 then
     for synapsePipeline in "../Azure Synapse Lakehouse Sync/Databricks Version/Synapse/Pipelines/*.json"
