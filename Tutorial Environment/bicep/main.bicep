@@ -105,49 +105,6 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
   ]
 } 
 
-// // Create the Synapse Analytics Workspace
-// module synapseAnalyticsDatabricks 'modules/synapseAnalytics.bicep' = if (synapseDeployFlag == 'no') {
-//   name: 'synapseAnalyticsDatabricks'
-//   scope: resourceGroup
-//   params: {
-//     synapseDeployFlag: synapseDeployFlag
-//     resourceSuffix: resourceSuffix
-//     azureRegion: azureRegion
-//     synapseSQLPoolName: synapseSQLPoolName
-//     synapseSQLSecondPoolName: synapseSQLSecondPoolName
-//     synapseSparkPoolName: synapseSparkPoolName
-//     synapseSQLAdministratorLogin: synapseSQLAdministratorLogin
-//     synapseSQLAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
-//     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
-//   }
-
-//   dependsOn: [
-//     storageAccounts
-//     databricksWorkspace
-//   ]
-// } 
-
-// // Create the Synapse Analytics Workspace
-// module synapseAnalytics 'modules/synapseAnalytics.bicep' = if (synapseDeployFlag == 'yes') {
-//   name: 'synapseAnalytics'
-//   scope: resourceGroup
-//   params: {
-//     synapseDeployFlag: synapseDeployFlag
-//     resourceSuffix: resourceSuffix
-//     azureRegion: azureRegion
-//     synapseSQLPoolName: synapseSQLPoolName
-//     synapseSQLSecondPoolName: synapseSQLSecondPoolName
-//     synapseSparkPoolName: synapseSparkPoolName
-//     synapseSQLAdministratorLogin: synapseSQLAdministratorLogin
-//     synapseSQLAdministratorLoginPassword: synapseSQLAdministratorLoginPassword
-//     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
-//   }
-
-//   dependsOn: [
-//     storageAccounts
-//   ]
-// } 
-
 // Create the Databricks Workspace
 module databricksWorkspace 'modules/databricksWorkspace.bicep' = if (synapseDeployFlag == 'no') {
   name: 'databricksWorkspace'

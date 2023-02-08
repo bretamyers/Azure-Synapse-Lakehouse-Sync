@@ -330,7 +330,8 @@ if [ $synapseDeployFlag = 'yes' ];
     for synapseNotebook in "../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Notebooks/"*.ipynb
     do
         synapseNotebookName=$(basename "$synapseNotebook" ".ipynb")
-        createSynapseNotebook=$(az synapse notebook import --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseNotebookName}" --file @"${synapseNotebook}" --spark-pool-name synapseSparkPoolName 2>&1 | tee -a $deploymentLogFile)
+        createSynapseNotebook=$(az synapse notebook import --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseNotebookName}" --file @"${synapseNotebook}" 2>&1 | tee -a $deploymentLogFile)
+        # createSynapseNotebook=$(az synapse notebook import --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseNotebookName}" --file @"${synapseNotebook}" --spark-pool-name "$synapseSparkPoolName" 2>&1 | tee -a $deploymentLogFile)
     done
 fi
 
