@@ -332,7 +332,7 @@ if [ $synapseDeployFlag = 'yes' ];
         # Get the Pipeline name from the JSON, not the filename
         synapseNotebookName=$(jq -r .name "${synapseNotebook}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
 
-        createLinkedService=$(az synapse notebook create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseNotebookName}" --file @"${synapseNotebook}" 2>&1 | tee -a $deploymentLogFile)
+        createSynapseNotebook=$(az synapse notebook create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseNotebookName}" --file @"${synapseNotebook}" 2>&1 | tee -a $deploymentLogFile)
     done
 fi
 
