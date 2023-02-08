@@ -126,7 +126,7 @@ resource synapseSQLPool 'Microsoft.Synapse/workspaces/sqlPools@2021-06-01' = {
   parent: synapseAnalyticsWorkspace
   location: azureRegion
   sku: {
-    name: 'DW1000c'
+    name: 'DW100c'
   }
 }
 
@@ -136,6 +136,29 @@ resource synapseSQLPool 'Microsoft.Synapse/workspaces/sqlPools@2021-06-01' = {
 resource synapseSQLPoolGeoBackups 'Microsoft.Synapse/workspaces/sqlPools/geoBackupPolicies@2021-06-01' = {
   name: 'Default'
   parent: synapseSQLPool
+  properties: {
+    state: 'Disabled'
+  }
+}
+
+// Synapse Dedicated SQL Pool: Create the initial SQL Pool for the Data Warehouse
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/quickstart-create-sql-pool-studio
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/sqlpools
+resource synapseSQLSecondPool 'Microsoft.Synapse/workspaces/sqlPools@2021-06-01' = {
+  name: synapseSQLSecondPoolName
+  parent: synapseAnalyticsWorkspace
+  location: azureRegion
+  sku: {
+    name: 'DW100c'
+  }
+}
+
+// Synapse Dedicated SQL Pool Geo-Backups: Disable Geo-Backups
+//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/backup-and-restore
+//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/sqlpools/geobackuppolicies
+resource synapseSQLSecondPoolGeoBackups 'Microsoft.Synapse/workspaces/sqlPools/geoBackupPolicies@2021-06-01' = {
+  name: 'Default'
+  parent: synapseSQLSecondPool
   properties: {
     state: 'Disabled'
   }
@@ -168,57 +191,6 @@ resource synapseSparkPool 'Microsoft.Synapse/workspaces/bigDataPools@2021-06-01'
     sparkVersion: '3.3'
   }
 }
-
-// Synapse Dedicated SQL Pool: Create the initial SQL Pool for the Data Warehouse
-//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/quickstart-create-sql-pool-studio
-//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/sqlpools
-resource synapseSQLSecondPool 'Microsoft.Synapse/workspaces/sqlPools@2021-06-01' = {
-  name: synapseSQLSecondPoolName
-  parent: synapseAnalyticsWorkspace
-  location: azureRegion
-  sku: {
-    name: 'DW100c'
-  }
-}
-
-// Synapse Dedicated SQL Pool Geo-Backups: Disable Geo-Backups
-//   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/backup-and-restore
-//   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/sqlpools/geobackuppolicies
-resource synapseSQLSecondPoolGeoBackups 'Microsoft.Synapse/workspaces/sqlPools/geoBackupPolicies@2021-06-01' = {
-  name: 'Default'
-  parent: synapseSQLSecondPool
-  properties: {
-    state: 'Disabled'
-  }
-}
-
-// // Synapse Spark Pool
-// //   https://learn.microsoft.com/en-us/azure/synapse-analytics/quickstart-create-apache-spark-pool-studio
-// //   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/bigdatapools?pivots=deployment-language-bicep
-// resource synapseSparkPool 'Microsoft.Synapse/workspaces/bigDataPools@2021-06-01' = if (synapseDeployFlag == 'yes') {
-//   name: synapseSparkPoolName
-//   location: azureRegion
-//   parent: synapseAnalyticsWorkspace
-//   properties: {
-//     autoPause: {
-//       delayInMinutes: 5
-//       enabled: true
-//     }
-//     autoScale: {
-//       enabled: false
-//     }
-//     cacheSize: 50
-//     dynamicExecutorAllocation: {
-//       enabled: true
-//       maxExecutors: 4
-//       minExecutors: 1
-//     }
-//     nodeCount: 5
-//     nodeSize: 'Small'
-//     nodeSizeFamily: 'MemoryOptimized'
-//     sparkVersion: '3.3'
-//   }
-// }
 
 // Synapse Workspace Firewall: Allow authenticated access from anywhere
 //   Azure: https://docs.microsoft.com/en-us/azure/synapse-analytics/security/synapse-workspace-ip-firewall
