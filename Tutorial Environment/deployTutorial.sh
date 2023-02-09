@@ -327,10 +327,10 @@ if [ $synapseDeployFlag = 'yes' ];
     then
     userOutput "STATUS" "Creating the Synapse Lakehouse Sync Notebooks..."
 
-    for synapseNotebook in "../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Notebooks/"*.ipynb
+    for synapseNotebook in "../Azure Synapse Lakehouse Sync/Synapse Version/Synapse/Notebooks/"*/*.ipynb
     do
         synapseNotebookName=$(basename "$synapseNotebook" ".ipynb")
-        folderPath=$(awk -F/ '{ print $(NF-1) }' <<< ${synapseNotebook})
+        folderPath=$(echo $synapseNotebook | cut -f 6 -d "/" );
         createSynapseNotebook=$(az synapse notebook import --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseNotebookName}" --file @"${synapseNotebook}" --folder-path "${folderPath}" 2>&1 | tee -a $deploymentLogFile)
         # createSynapseNotebook=$(az synapse notebook import --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseNotebookName}" --file @"${synapseNotebook}" --spark-pool-name "$synapseSparkPoolName" 2>&1 | tee -a $deploymentLogFile)
     done
