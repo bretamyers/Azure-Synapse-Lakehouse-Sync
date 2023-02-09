@@ -182,10 +182,10 @@ resource synapseSparkPool 'Microsoft.Synapse/workspaces/bigDataPools@2021-06-01'
     cacheSize: 50
     dynamicExecutorAllocation: {
       enabled: true
-      maxExecutors: 4
+      maxExecutors: 2
       minExecutors: 1
     }
-    nodeCount: 5
+    nodeCount: 10
     nodeSize: 'Small'
     nodeSizeFamily: 'MemoryOptimized'
     sparkVersion: '3.3'
