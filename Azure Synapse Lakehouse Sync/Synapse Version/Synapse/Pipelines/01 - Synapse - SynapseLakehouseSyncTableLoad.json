@@ -1434,48 +1434,57 @@
 				}
 			},
 			{
-				"name": "Spark - Synapse Lakehouse Sync Log Success",
-				"description": "Call the Azure Databricks notebook to log in the _SynapseLakehouseSync delta table that the data was loaded successfully into Synapse.",
-				"type": "SynapseNotebook",
-				"dependsOn": [
-					{
-						"activity": "Add TableRowCountSynapse to Json Object",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					},
-					{
-						"activity": "ForEach - Drop Temp Tables",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"notebook": {
-						"referenceName": "Synapse Lakehouse Sync Tracking Table Log Success",
-						"type": "NotebookReference"
-					},
-					"parameters": {
-						"SynapseLakehouseSyncParameters": {
-							"value": {
-								"value": "@string(activity('Add TableRowCountSynapse to Json Object').output.value[0].JsonString)",
-								"type": "Expression"
-							},
-							"type": "string"
-						}
-					},
-					"snapshot": true
-				}
-			}
+                "name": "Spark - Synapse Lakehouse Sync Log Success",
+                "description": "Call the Azure Databricks notebook to log in the _SynapseLakehouseSync delta table that the data was loaded successfully into Synapse.",
+                "type": "SynapseNotebook",
+                "dependsOn": [
+                    {
+                        "activity": "Add TableRowCountSynapse to Json Object",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "ForEach - Drop Temp Tables",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "7.00:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "notebook": {
+                        "referenceName": "Synapse Lakehouse Sync Tracking Table Log Success",
+                        "type": "NotebookReference"
+                    },
+                    "parameters": {
+                        "SynapseLakehouseSyncParameters": {
+                            "value": {
+                                "value": "@string(activity('Add TableRowCountSynapse to Json Object').output.value[0].JsonString)",
+                                "type": "Expression"
+                            },
+                            "type": "string"
+                        }
+                    },
+                    "sparkPool": {
+                        "referenceName": "SyncCluster",
+                        "type": "BigDataPoolReference"
+                    },
+                    "conf": {
+                        "spark.dynamicAllocation.enabled": null,
+                        "spark.dynamicAllocation.minExecutors": null,
+                        "spark.dynamicAllocation.maxExecutors": null
+                    },
+                    "numExecutors": null
+                }
+            }
 		],
 		"parameters": {
 			"PipelineValue": {
