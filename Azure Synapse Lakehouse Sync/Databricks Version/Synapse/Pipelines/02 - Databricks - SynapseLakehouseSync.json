@@ -683,7 +683,7 @@
 		"parameters": {
 			"StorageAccountNameMetadata": {
 				"type": "string",
-				"defaultValue": "https://synapsesyncqbq.dfs.core.windows.net/synapsesync/Databricks - Synapse_Lakehouse_Sync_Metadata.csv"
+				"defaultValue": "https://synapsesyncqbq.dfs.core.windows.net/synapsesync/Synapse_Lakehouse_Sync_Metadata.csv"
 			}
 		},
 		"variables": {

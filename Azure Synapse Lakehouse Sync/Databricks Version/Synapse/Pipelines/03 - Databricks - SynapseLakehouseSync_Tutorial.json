@@ -24,7 +24,7 @@
 					"waitOnCompletion": true,
 					"parameters": {
 						"StorageAccountNameMetadata": {
-							"value": "@concat('https://'\n,pipeline().DataFactory\n,'.dfs.core.windows.net/synapsesync/Databricks - Synapse_Lakehouse_Sync_Metadata.csv')",
+							"value": "@concat('https://'\n,pipeline().DataFactory\n,'.dfs.core.windows.net/synapsesync/Synapse_Lakehouse_Sync_Metadata.csv')",
 							"type": "Expression"
 						}
 					}
@@ -85,7 +85,7 @@
 					"waitOnCompletion": true,
 					"parameters": {
 						"StorageAccountNameMetadata": {
-							"value": "@concat('https://'\n,pipeline().DataFactory\n,'.dfs.core.windows.net/synapsesync/Databricks - Synapse_Lakehouse_Sync_Metadata.csv')",
+							"value": "@concat('https://'\n,pipeline().DataFactory\n,'.dfs.core.windows.net/synapsesync/Synapse_Lakehouse_Sync_Metadata.csv')",
 							"type": "Expression"
 						}
 					}
@@ -210,7 +210,7 @@
 					"waitOnCompletion": true,
 					"parameters": {
 						"StorageAccountNameMetadata": {
-							"value": "@concat('https://'\n,pipeline().DataFactory\n,'.dfs.core.windows.net/synapsesync/Databricks - Synapse_Lakehouse_Sync_Metadata.csv')",
+							"value": "@concat('https://'\n,pipeline().DataFactory\n,'.dfs.core.windows.net/synapsesync/Synapse_Lakehouse_Sync_Metadata.csv')",
 							"type": "Expression"
 						}
 					}
