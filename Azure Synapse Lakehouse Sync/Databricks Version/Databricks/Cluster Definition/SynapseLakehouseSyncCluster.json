@@ -10,8 +10,8 @@
         "availability": "SPOT_WITH_FALLBACK_AZURE",
         "spot_bid_max_price": -1
     },
-    "node_type_id": "Standard_DS3_v2",
-    "driver_node_type_id": "Standard_DS3_v2",
+    "node_type_id": "Standard_D4a_v4",
+    "driver_node_type_id": "Standard_D4a_v4",
     "ssh_public_keys": [],
     "custom_tags": {},
     "spark_env_vars": {},

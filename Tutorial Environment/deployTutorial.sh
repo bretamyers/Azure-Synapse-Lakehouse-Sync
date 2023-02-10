@@ -210,7 +210,7 @@ then
 
     # Create the Databricks Cluster
     userOutput "STATUS" "Creating the Databricks Workspace Cluster definition..."
-    createDatabricksCluster=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks/Cluster Definition/SynapseLakehouseSyncCluster.json" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" --query cluster_id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
+    createDatabricksCluster=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/clusters/create --body "@../Azure Synapse Lakehouse Sync/Databricks Version/Databricks/Cluster Definition/SynapseLakehouseSyncCluster.json" --headers "{\"Authorization\":\"Bearer ${databricksAccessToken}\"}" --query cluster_id --output tsv 2>&1 | sed 's/[[:space:]]*//g')
 
     ################################################################################
     # Databricks Workspace Notebooks                                               #
