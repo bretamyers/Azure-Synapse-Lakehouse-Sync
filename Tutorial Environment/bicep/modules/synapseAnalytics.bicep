@@ -35,7 +35,7 @@ resource enterpriseDataLakeStorageAccount 'Microsoft.Storage/storageAccounts@201
 
 // Reference to the Databricks workspace we created
 // Only deploy if the synapseDeployFlag is false
-resource databricksWorkspace 'Microsoft.Databricks/workspaces@2021-04-01-preview' = if (synapseDeployFlag == 'no') {
+resource databricksWorkspace 'Microsoft.Databricks/workspaces@2021-04-01-preview' existing = if (synapseDeployFlag == 'no') {
   name: 'synapsesync${resourceSuffix}'
 }
 

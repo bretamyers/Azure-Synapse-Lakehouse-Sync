@@ -141,6 +141,9 @@ userOutput "RESULT" "Azure Subscription ID:" ${accountDetails[azureSubscriptionI
 userOutput "RESULT" "Azure AD Username:" ${accountDetails[azureUsername]}
 userOutput "RESULT" "Azure AD User Object Id:" ${accountDetails[azureUsernameObjectId]}
 
+# Copy bicep parameters files to a temp location
+cp bicep/main.parameters.json bicep/main.parameters_tmp.json 2>&1
+
 # Update a Bicep variable if it isn't configured by the user. This allows Bicep to add the user Object Id
 # to the Storage Blob Data Contributor role on the Azure Data Lake Storage Gen2 account, which allows Synapse
 # Serverless SQL to query files on storage.
@@ -388,6 +391,9 @@ sed -i "s/REPLACE_DATABRICKS_SCOPE_NAME/${databricksScopeName}/g" "../Azure Syna
 sed -i "s/REPLACE_ENTERPRISE_DATALAKE_SCOPE_SECRET_NAME/${enterpriseDataLakeScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/$version/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
 sed -i "s/REPLACE_SYNAPSE_STORAGE_SCOPE_SECRET_NAME/${synapseStorageScopeSecretName}/g" "../Azure Synapse Lakehouse Sync/$version/Synapse/Synapse_Lakehouse_Sync_Metadata.csv"
 sampleDataCopy=$(az storage copy -s "../Azure Synapse Lakehouse Sync/$version/Synapse/Synapse_Lakehouse_Sync_Metadata.csv" -d "https://${bicepDeploymentDetails[synapseStorageAccountName]}.blob.core.windows.net/synapsesync?${synapseStorageAccountSAS}" 2>&1 >> $deploymentLogFile)
+
+#Reset the deploy flag in the parameter file
+mv bicep/main.parameters_tmp.json bicep/main.parameters.json 2>&1
 
 # Display the deployment details to the user
 userOutput "DEPLOYMENT" "Deployment:" "Complete"
