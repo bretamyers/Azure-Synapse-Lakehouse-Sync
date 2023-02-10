@@ -216,14 +216,14 @@ then
     userOutput "STATUS" "Creating the Databricks Workspace Notebooks..."
 
     # Create the Databricks Workspace folders for the notebooks
-    for databricksNotebookFolder in '../Azure Synapse Lakehouse Sync/Databricks/Notebooks'/*/
+    for databricksNotebookFolder in '../Azure Synapse Lakehouse Sync/Databricks Version/Databricks/Notebooks'/*/
     do
         workspaceFolder=$(awk -F/ '{ print $(NF-1) }' <<< ${databricksNotebookFolder})
         databricksNotebookCreate=$(az rest --method post --url https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/api/2.0/workspace/mkdirs --body "{ \"path\": \"/${workspaceFolder}\" }" --headers "{ \"Authorization\": \"Bearer ${databricksAccessToken}\", \"Content-Type\": \"application/json\" }" 2>&1 | tee -a $deploymentLogFile)
     done
 
     # Create the Databricks Workspace notebooks
-    for databricksNotebook in '../Azure Synapse Lakehouse Sync/Databricks/Notebooks'/*/*.dbc
+    for databricksNotebook in '../Azure Synapse Lakehouse Sync/Databricks Version/Databricks/Notebooks'/*/*.dbc
     do
         # Parse out the notebook file and path names
         databricksNotebookPath=${databricksNotebook%/*}
