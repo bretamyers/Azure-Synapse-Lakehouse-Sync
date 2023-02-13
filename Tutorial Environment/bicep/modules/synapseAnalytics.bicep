@@ -185,7 +185,7 @@ resource synapseSparkPool 'Microsoft.Synapse/workspaces/bigDataPools@2021-06-01'
       maxExecutors: 2
       minExecutors: 1
     }
-    nodeCount: 10
+    nodeCount: 12
     nodeSize: 'Small'
     nodeSizeFamily: 'MemoryOptimized'
     sparkVersion: '3.3'
