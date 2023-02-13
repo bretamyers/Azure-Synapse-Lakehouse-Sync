@@ -402,6 +402,9 @@ userOutput "RESULT" "Synapse Analytics Workspace Name:" ${bicepDeploymentDetails
 userOutput "RESULT" "Synapse Analytics SQL Admin:" ${bicepDeploymentDetails[synapseSQLAdministratorLogin]}
 userOutput "RESULT" "Synapse Analytics Storage Account Name:" ${bicepDeploymentDetails[synapseStorageAccountName]}
 userOutput "RESULT" "Enterprise Data Lake Storage Account Name:" ${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}
-userOutput "RESULT" "Databricks Workspace Name:" ${bicepDeploymentDetails[databricksWorkspaceName]}
 userOutput "RESULT" "Synapse Analytics Workspace:" "https://web.azuresynapse.net"
-userOutput "RESULT" "Databricks Workspace:" "https://${bicepDeploymentDetails[databricksWorkspaceUrl]}"
+if [ $synapseDeployFlag = 'no' ];
+then
+    userOutput "RESULT" "Databricks Workspace Name:" ${bicepDeploymentDetails[databricksWorkspaceName]}
+    userOutput "RESULT" "Databricks Workspace:" "https://${bicepDeploymentDetails[databricksWorkspaceUrl]}"
+fi
