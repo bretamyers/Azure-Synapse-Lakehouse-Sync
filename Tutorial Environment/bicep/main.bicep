@@ -14,7 +14,7 @@ targetScope='subscription'
   'no'
 ])
 @description('Synapse deployment flag for Synapse only solution.')
-param synapseDeployFlag string = 'no'
+param synapseOnlyDeployFlag string = 'no'
 
 @description('Region to create all the resources in.')
 param azureRegion string
@@ -67,7 +67,7 @@ module storageAccounts 'modules/storageAccounts.bicep' = {
 }
 
 // Create the Azure Key Vault
-module keyVault 'modules/keyVault.bicep' = if (synapseDeployFlag == 'no') {
+module keyVault 'modules/keyVault.bicep' = if (synapseOnlyDeployFlag == 'no') {
   name: 'keyVault'
   scope: resourceGroup
   params: {
@@ -86,7 +86,7 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
   name: 'synapseAnalytics'
   scope: resourceGroup
   params: {
-    synapseDeployFlag: synapseDeployFlag
+    synapseOnlyDeployFlag: synapseOnlyDeployFlag
     resourceSuffix: resourceSuffix
     azureRegion: azureRegion
     synapseSQLPoolName: synapseSQLPoolName
@@ -97,7 +97,7 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
     synapseAzureADAdminObjectId: synapseAzureADAdminObjectId
   }
 
-  dependsOn: (synapseDeployFlag == 'no') ? [
+  dependsOn: (synapseOnlyDeployFlag == 'no') ? [
     storageAccounts
     databricksWorkspace
   ] : [
@@ -106,7 +106,7 @@ module synapseAnalytics 'modules/synapseAnalytics.bicep' = {
 } 
 
 // Create the Databricks Workspace
-module databricksWorkspace 'modules/databricksWorkspace.bicep' = if (synapseDeployFlag == 'no') {
+module databricksWorkspace 'modules/databricksWorkspace.bicep' = if (synapseOnlyDeployFlag == 'no') {
   name: 'databricksWorkspace'
   scope: resourceGroup
   params: {
@@ -128,9 +128,9 @@ output synapseSQLPoolName string = synapseSQLPoolName
 output synapseSQLSecondPoolName string = synapseSQLSecondPoolName
 output synapseSparkPoolName string = synapseSparkPoolName
 output synapseSQLAdministratorLogin string = synapseSQLAdministratorLogin
-output databricksWorkspaceName string = (synapseDeployFlag == 'yes') ? 'NA' : databricksWorkspace.outputs.databricksWorkspaceName
-output databricksWorkspaceUrl string = (synapseDeployFlag == 'yes') ? 'NA' : databricksWorkspace.outputs.databricksWorkspaceUrl
-output databricksWorkspaceId string = (synapseDeployFlag == 'yes') ? 'NA' : databricksWorkspace.outputs.databricksWorkspaceId
-output keyVaultName string = (synapseDeployFlag == 'yes') ? 'NA' : keyVault.outputs.keyVaultName
-output keyVaultVaultUri string = (synapseDeployFlag == 'yes') ? 'NA' : keyVault.outputs.keyVaultVaultUri
-output keyVaultId string = (synapseDeployFlag == 'yes') ? 'NA' : keyVault.outputs.keyVaultId
+output databricksWorkspaceName string = (synapseOnlyDeployFlag == 'yes') ? 'NA' : databricksWorkspace.outputs.databricksWorkspaceName
+output databricksWorkspaceUrl string = (synapseOnlyDeployFlag == 'yes') ? 'NA' : databricksWorkspace.outputs.databricksWorkspaceUrl
+output databricksWorkspaceId string = (synapseOnlyDeployFlag == 'yes') ? 'NA' : databricksWorkspace.outputs.databricksWorkspaceId
+output keyVaultName string = (synapseOnlyDeployFlag == 'yes') ? 'NA' : keyVault.outputs.keyVaultName
+output keyVaultVaultUri string = (synapseOnlyDeployFlag == 'yes') ? 'NA' : keyVault.outputs.keyVaultVaultUri
+output keyVaultId string = (synapseOnlyDeployFlag == 'yes') ? 'NA' : keyVault.outputs.keyVaultId

@@ -12,7 +12,7 @@ targetScope = 'resourceGroup'
   'yes'
   'no'
 ])
-param synapseDeployFlag string = 'no'
+param synapseOnlyDeployFlag string = 'no'
 param resourceSuffix string
 param azureRegion string
 param synapseSQLPoolName string
@@ -34,8 +34,8 @@ resource enterpriseDataLakeStorageAccount 'Microsoft.Storage/storageAccounts@201
 }
 
 // Reference to the Databricks workspace we created
-// Only deploy if the synapseDeployFlag is false
-resource databricksWorkspace 'Microsoft.Databricks/workspaces@2021-04-01-preview' existing = if (synapseDeployFlag == 'no') {
+// Only deploy if the synapseOnlyDeployFlag is false
+resource databricksWorkspace 'Microsoft.Databricks/workspaces@2021-04-01-preview' existing = if (synapseOnlyDeployFlag == 'no') {
   name: 'synapsesync${resourceSuffix}'
 }
 
@@ -59,9 +59,9 @@ resource synapseAnalyticsWorkspace 'Microsoft.Synapse/workspaces@2021-06-01' = {
 }
 
 // Azure Databricks Permissions: Give the Synapse Analytics Workspace Managed Identity permissions to Azure Databricks
-// Only deploy if the synapseDeployFlag is false
+// Only deploy if the synapseOnlyDeployFlag is false
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/Microsoft.Authorization/roleAssignments
-resource synapseDatabricksWorkspacePermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = if (synapseDeployFlag == 'no') {
+resource synapseDatabricksWorkspacePermissions 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = if (synapseOnlyDeployFlag == 'no') {
   name: guid(databricksWorkspace.id, subscription().subscriptionId, 'b24988ac-6180-42a0-ab88-20f7382dd24c')
   scope: databricksWorkspace
   properties: {
@@ -167,7 +167,7 @@ resource synapseSQLSecondPoolGeoBackups 'Microsoft.Synapse/workspaces/sqlPools/g
 // Synapse Spark Pool
 //   https://learn.microsoft.com/en-us/azure/synapse-analytics/quickstart-create-apache-spark-pool-studio
 //   Bicep: https://docs.microsoft.com/en-us/azure/templates/microsoft.synapse/workspaces/bigdatapools?pivots=deployment-language-bicep
-resource synapseSparkPool 'Microsoft.Synapse/workspaces/bigDataPools@2021-06-01' = if (synapseDeployFlag == 'yes') {
+resource synapseSparkPool 'Microsoft.Synapse/workspaces/bigDataPools@2021-06-01' = if (synapseOnlyDeployFlag == 'yes') {
   name: synapseSparkPoolName
   location: azureRegion
   parent: synapseAnalyticsWorkspace

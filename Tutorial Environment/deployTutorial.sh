@@ -30,7 +30,7 @@
 
 bicepDeploymentName="Azure-Synapse-Lakehouse-Sync"
 deploymentLogFile="deployment.log"
-synapseDeployFlag=${1:-no}
+synapseOnlyDeployFlag=${1:-no}
 
 declare -A accountDetails
 declare -A bicepDeploymentDetails
@@ -150,7 +150,7 @@ cp bicep/main.parameters.json bicep/main.parameters_tmp.json 2>&1
 sed -i "s/REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID/${accountDetails[azureUsernameObjectId]}/g" bicep/main.parameters.json 2>&1
 
 # Update a Bicep variable to determine if its a Synapse only and Synapse and Databricks deployment.
-sed -i "s/REPLACE_SYNAPSE_DEPLOY_FLAG/${synapseDeployFlag}/g" bicep/main.parameters.json 2>&1
+sed -i "s/REPLACE_SYNAPSE_ONLY_DEPLOY_FLAG/${synapseOnlyDeployFlag}/g" bicep/main.parameters.json 2>&1
 
 
 # Make sure Azure Key Vault was not deleted but also not purged. Bicep will throw an error if it's in the purged state.
@@ -194,7 +194,7 @@ done
 # Get the Synapse AQL Administrator Login Password from the Bicep main.parameters.json
 bicepDeploymentDetails[synapseSQLAdministratorLoginPassword]=$(jq -r .parameters.synapseSQLAdministratorLoginPassword.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
-if [ $synapseDeployFlag = 'no' ];
+if [ $synapseOnlyDeployFlag = 'no' ];
 then
     # Get the Databricks Workspace Azure AD accessToken for authentication
     databricksAccessToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output tsv --query accessToken 2>&1 | sed 's/[[:space:]]*//g')
@@ -261,7 +261,7 @@ elif [[ "${executeQuery}" == *"Login timeout expired"* ]]; then
 fi
 
 # Execute all other queries against the new database
-if [ $synapseDeployFlag == 'no' ]; then
+if [ $synapseOnlyDeployFlag == 'no' ]; then
     version='Databricks Version'
 else
     version='Synapse Version'
@@ -278,7 +278,7 @@ done
 
 userOutput "STATUS" "Creating the Synapse Workspace Linked Services..."
 
-if [ $synapseDeployFlag = 'no' ];
+if [ $synapseOnlyDeployFlag = 'no' ];
 then
     for synapseLinkedService in "../Azure Synapse Lakehouse Sync/$version/Synapse/Linked Services/"*.json
     do
@@ -326,7 +326,7 @@ done
 # Synapse Workspace Notebook                                                  #
 ################################################################################
 
-if [ $synapseDeployFlag = 'yes' ];
+if [ $synapseOnlyDeployFlag = 'yes' ];
     then
     userOutput "STATUS" "Creating the Synapse Lakehouse Sync Notebooks..."
 
@@ -345,7 +345,7 @@ fi
 
 userOutput "STATUS" "Creating the Synapse Lakehouse Sync Pipelines..."
 
-if [ $synapseDeployFlag = 'no' ];
+if [ $synapseOnlyDeployFlag = 'no' ];
 then
     for synapsePipeline in "../Azure Synapse Lakehouse Sync/Databricks Version/Synapse/Pipelines/"*.json
     do
@@ -403,7 +403,7 @@ userOutput "RESULT" "Synapse Analytics SQL Admin:" ${bicepDeploymentDetails[syna
 userOutput "RESULT" "Synapse Analytics Storage Account Name:" ${bicepDeploymentDetails[synapseStorageAccountName]}
 userOutput "RESULT" "Enterprise Data Lake Storage Account Name:" ${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}
 userOutput "RESULT" "Synapse Analytics Workspace:" "https://web.azuresynapse.net"
-if [ $synapseDeployFlag = 'no' ];
+if [ $synapseOnlyDeployFlag = 'no' ];
 then
     userOutput "RESULT" "Databricks Workspace Name:" ${bicepDeploymentDetails[databricksWorkspaceName]}
     userOutput "RESULT" "Databricks Workspace:" "https://${bicepDeploymentDetails[databricksWorkspaceUrl]}"
