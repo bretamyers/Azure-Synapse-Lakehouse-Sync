@@ -121,19 +121,22 @@ for value in "${accountDetails[@]}"; do
 done
 
 # Get the users Azure AD Object Id from the Bicep main.parameters.json
-#azureUsernameObjectId=$(jq -r .parameters.synapseAzureADAdminObjectId.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
+azureUsernameObjectId=$(jq -r .parameters.synapseAzureADAdminObjectId.value bicep/main.parameters.json 2>&1 | sed 's/[[:space:]]*//g')
 
 # Validate the users Azure AD Object Id is a valid GUID or that the value was manually set in main.parameters.json
 #if [ $(validateGUID ${accountDetails[azureUsernameObjectId]}) = "false" ]; then
 #    if [ $(validateGUID ${azureUsernameObjectId}) = "false" ]; then
-    if [ $(validateGUID ${accountDetails[azureUsernameObjectId]}) = "false" ]; then
+if [ $(validateGUID ${accountDetails[azureUsernameObjectId]}) = "false" ]; then
+    if [ $(validateGUID ${azureUsernameObjectId}) = "false" ]; then
         userOutput "ERROR" "Unable to fetch the Azure AD Object Id for your user. Are you using an Azure AD Guest/External Account? This is not currently supported."
+        userOutput "ERROR" "Please update the bicep/main.parameters.json file replacing REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID value with your users AAD object_id."
+        userOutput "ERROR" "Example: update \"value\": \"REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID\" to \"value: \"1eff46ca-fd6b-3534-40c6-5b4686950a76\".
         exit 1;
+    else
+        accountDetails[azureUsernameObjectId]=${azureUsernameObjectId}
     fi
-#    else
-#        accountDetails[azureUsernameObjectId]=${azureUsernameObjectId}
-#    fi
-#fi
+fi
+
 
 # Display some environment details to the user
 userOutput "RESULT" "Azure Subscription:" ${accountDetails[azureSubscriptionName]}
