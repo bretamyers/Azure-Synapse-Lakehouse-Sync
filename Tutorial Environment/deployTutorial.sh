@@ -289,10 +289,10 @@ then
         synapseLinkedServiceName=$(jq -r .name "${synapseLinkedService}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
 
         cp "${synapseLinkedService}" "${synapseLinkedService}.tmp" 2>&1
-        sed -i "s|REPLACE_DATABRICKS_WORKSPACE_URL|https://${bicepDeploymentDetails[databricksWorkspaceUrl]}|g" "${synapseLinkedService}.tmp"
-        sed -i "s|REPLACE_DATABRICKS_WORKSPACE_ID|${bicepDeploymentDetails[databricksWorkspaceId]}|g" "${synapseLinkedService}.tmp"
-        sed -i "s|REPLACE_DATABRICKS_CLUSTER_ID|${createDatabricksCluster}|g" "${synapseLinkedService}.tmp"
-        sed -i "s|REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME|${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}|g" "${synapseLinkedService}.tmp"
+        sed -i "s/REPLACE_DATABRICKS_WORKSPACE_URL/https://${bicepDeploymentDetails[databricksWorkspaceUrl]}/g" "${synapseLinkedService}.tmp"
+        sed -i "s/REPLACE_DATABRICKS_WORKSPACE_ID/${bicepDeploymentDetails[databricksWorkspaceId]}/g" "${synapseLinkedService}.tmp"
+        sed -i "s/REPLACE_DATABRICKS_CLUSTER_ID/${createDatabricksCluster}/g" "${synapseLinkedService}.tmp"
+        sed -i "s/REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}/g" "${synapseLinkedService}.tmp"
 
         createLinkedService=$(az synapse linked-service create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseLinkedServiceName}" --file @"${synapseLinkedService}.tmp" 2>&1 | tee -a $deploymentLogFile)
         rm "${synapseLinkedService}.tmp"
@@ -304,7 +304,7 @@ else
         synapseLinkedServiceName=$(jq -r .name "${synapseLinkedService}" 2>&1 | sed 's/^[ \t]*//;s/[ \t]*$//')
 
         cp "${synapseLinkedService}" "${synapseLinkedService}.tmp" 2>&1
-        sed -i "s|REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME|${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}|g" "${synapseLinkedService}.tmp"
+        sed -i "s/REPLACE_ENTERPRISE_DATALAKE_STORAGE_ACCOUNT_NAME/${bicepDeploymentDetails[enterpriseDataLakeStorageAccountName]}/g" "${synapseLinkedService}.tmp"
 
         createLinkedService=$(az synapse linked-service create --workspace-name ${bicepDeploymentDetails[synapseAnalyticsWorkspaceName]} --name "${synapseLinkedServiceName}" --file @"${synapseLinkedService}.tmp" 2>&1 | tee -a $deploymentLogFile)
         rm "${synapseLinkedService}.tmp"
