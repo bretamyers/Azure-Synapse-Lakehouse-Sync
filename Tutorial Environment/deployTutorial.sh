@@ -130,7 +130,7 @@ if [ $(validateGUID ${accountDetails[azureUsernameObjectId]}) = "false" ]; then
     if [ $(validateGUID ${azureUsernameObjectId}) = "false" ]; then
         userOutput "ERROR" "Unable to fetch the Azure AD Object Id for your user. Are you using an Azure AD Guest/External Account? This is not currently supported."
         userOutput "ERROR" "Please update the bicep/main.parameters.json file replacing REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID value with your users AAD object_id."
-        userOutput "ERROR" "Example: update \"value\": \"REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID\" to \"value: \"1eff46ca-fd6b-3534-40c6-5b4686950a76\".
+        userOutput "ERROR" "Example: update \"value\": \"REPLACE_SYNAPSE_AZURE_AD_ADMIN_OBJECT_ID\" to \"value: \"1eff46ca-fd6b-3534-40c6-5b4686950a76\"."
         exit 1;
     else
         accountDetails[azureUsernameObjectId]=${azureUsernameObjectId}
