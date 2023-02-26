@@ -10,10 +10,18 @@ https://user-images.githubusercontent.com/16770830/192665633-1ecf047a-caae-44c8-
 
 The following commands should be executed from the Azure Cloud Shell at https://shell.azure.com using Bash. This will deploy the full tutorial environment with no additional configuration needed.
 
+### Synapse Only Version
 ```
 @Azure:~$ git clone https://github.com/bretamyers/Azure-Synapse-Lakehouse-Sync
 @Azure:~$ cd 'Azure-Synapse-Lakehouse-Sync/Tutorial Environment'
 @Azure:~$ bash deployTutorial.sh 
+```
+
+### Synapse + Databricks Version
+```
+@Azure:~$ git clone https://github.com/bretamyers/Azure-Synapse-Lakehouse-Sync
+@Azure:~$ cd 'Azure-Synapse-Lakehouse-Sync/Tutorial Environment'
+@Azure:~$ bash deployTutorial.sh no
 ```
 
 <br>
@@ -66,7 +74,39 @@ The **SynapeLakehouseSync_Tutorial** pipeline is designed to simulate data loads
 
 <br>
 
-# What's Deployed
+# Synapse Only Version
+## What's Deployed
+
+#### Azure Synapse Analytics Workspace
+- **DW1000 Dedicated SQL Pool:** Primary data warehouse Enterprise Data Lake Gold Zone changes are synchronized to
+- **DW100 Dedicated SQL Pool:** Example of a second data warehouse where only some tables are synchronized from the same Enterprise Data Lake Gold Zone
+- Azure Synapse Lakehouse Sync Pipelines
+- **Spark Pool:** A spark pool that is used to perform the sync process capturing the delta change feed rows and simulating the records changes in the gold zone on the lake.
+
+> NOTE: Two Synapse Dedicatd SQL Pools are created and running upon deployment. If you wish to pause the Dedicated SQL Pools to avoid charges, follow the steps [here](https://learn.microsoft.com/en-us/azure/synapse-analytics/sql-data-warehouse/pause-and-resume-compute-portal).
+
+
+#### Azure Data Lake Storage Gen2: Synapse Workspace
+- **workspace:** Container for the Azure Synapse Analytics Workspace
+- **synapsesync:** Container for Azure Synapse Lakehouse Sync change history from the Enterprise Data Lake Gold Zone. It also contains the **Synapse_Lakehouse_Sync_Metadata.csv** file which instructs Azure Synapse Lakehouse Sync on the tables that need to be synchronized.
+
+#### Azure Data Lake Storage Gen2: Enterprise Data Lake
+- **gold:** Container for the Enterprise Data Lake Gold Zone which includes the sample data
+
+# What's Configured
+The **deployTutorial.sh** script will execute a Bicep deployment for the environment and then configure the environment with the Azure Synapse Lakehouse Sync artifacts including: 
+
+- Synapse Workspace Pipelines
+- Synapse Workspace Linked Services
+- Synapse Workspace Datasets
+- Synapse Dedicated SQL Pool
+- Synapse Spark Pool
+- Sample Data
+
+<br>
+
+# Synapse + Databricks Version
+## What's Deployed
 
 #### Azure Synapse Analytics Workspace
 - **DW1000 Dedicated SQL Pool:** Primary data warehouse Enterprise Data Lake Gold Zone changes are synchronized to
@@ -88,8 +128,6 @@ The **SynapeLakehouseSync_Tutorial** pipeline is designed to simulate data loads
 
 #### Azure Key Vault
 - Secure storage for Azure Data Lake access keys and used by Databricks for authentication
-
-<br>
 
 # What's Configured
 The **deployTutorial.sh** script will execute a Bicep deployment for the environment and then configure the environment with the Azure Synapse Lakehouse Sync artifacts including: 
